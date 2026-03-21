@@ -8,79 +8,92 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/croppie/2.6.5/croppie.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/croppie/2.6.5/croppie.min.js"></script>
     <style>
-        body { font-family: -apple-system, "Noto Sans TC", sans-serif; background-color: #f8f9fa; margin: 0; padding: 10px; padding-bottom: 100px; }
-        .container { max-width: 500px; margin: 0 auto; background: white; padding: 15px; border-radius: 24px; box-shadow: 0 10px 30px rgba(0,0,0,0.08); }
+        body { font-family: -apple-system, "Noto Sans TC", sans-serif; background-color: #f4f6f8; margin: 0; padding: 10px; padding-bottom: 110px; }
+        .container { max-width: 500px; margin: 0 auto; background: white; padding: 18px; border-radius: 28px; box-shadow: 0 10px 40px rgba(0,0,0,0.06); }
         
-        /* 編輯控制列 */
-        .edit-panel { display: flex; gap: 10px; margin-bottom: 12px; }
-        .inputs { flex: 2; }
-        .styler { flex: 1.2; background: #f9f9f9; padding: 8px; border-radius: 12px; border: 1px solid #eee; }
-        label { font-size: 10px; color: #999; font-weight: bold; display: block; margin-bottom: 2px; }
-        input, textarea, select { width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; box-sizing: border-box; margin-bottom: 6px; outline: none; }
+        /* 編輯面板 */
+        .config-row { display: flex; gap: 12px; margin-bottom: 12px; }
+        .main-inputs { flex: 2; }
+        .style-inputs { flex: 1.2; background: #f8fbf8; padding: 10px; border-radius: 16px; border: 1px solid #edf4ed; }
+        label { font-size: 11px; color: #999; font-weight: bold; display: block; margin-bottom: 4px; }
+        input, textarea, select { width: 100%; padding: 8px; border: 1px solid #eee; border-radius: 10px; font-size: 15px; box-sizing: border-box; margin-bottom: 8px; outline: none; transition: 0.3s; }
+        input:focus { border-color: #00b900; }
 
-        /* 預覽容器 */
-        .viewport { margin: 10px 0; border: 3px solid #00b900; border-radius: 20px; overflow: hidden; position: relative; background: #000; aspect-ratio: 20/13; }
-        #croppie-el { width: 100%; height: 100%; }
-        #fixed-img { width: 100%; height: 100%; object-fit: cover; display: none; }
-        
-        .overlay { position: absolute; bottom: 12%; left: 20px; right: 20px; pointer-events: none; z-index: 10; text-shadow: 0 2px 5px rgba(255,255,255,0.9); }
-        
-        /* 縮圖導覽 */
-        .thumb-nav { display: flex; gap: 10px; overflow-x: auto; padding: 10px 0; scrollbar-width: none; }
-        .t-box { width: 70px; height: 46px; border-radius: 8px; border: 2px solid #eee; object-fit: cover; cursor: pointer; flex-shrink: 0; transition: 0.2s; position: relative; }
-        .t-box.active { border-color: #00b900; transform: scale(1.05); box-shadow: 0 4px 10px rgba(0,185,0,0.2); }
-        .t-add { width: 70px; height: 46px; border-radius: 8px; border: 2px dashed #ccc; display: flex; align-items: center; justify-content: center; color: #aaa; font-size: 24px; cursor: pointer; flex-shrink: 0; }
+        /* 預覽視窗 */
+        .stage { margin: 10px 0; border: 4px solid #00b900; border-radius: 24px; overflow: hidden; position: relative; background: #000; aspect-ratio: 20/13; }
+        #croppie-wrap { width: 100%; height: 100%; }
+        #view-fixed { width: 100%; height: 100%; object-fit: cover; display: none; }
+        .text-layer { position: absolute; bottom: 12%; left: 20px; right: 20px; pointer-events: none; z-index: 10; text-shadow: 0 2px 8px rgba(255,255,255,0.8); }
 
-        /* 底部按鈕 */
-        .actions { position: fixed; bottom: 0; left: 0; right: 0; background: rgba(255,255,255,0.98); padding: 15px 20px; box-shadow: 0 -5px 20px rgba(0,0,0,0.05); display: flex; flex-direction: column; align-items: center; z-index: 100; }
-        .btn-send { width: 100%; max-width: 400px; background: #00b900; color: white; padding: 16px; border: none; border-radius: 16px; font-size: 18px; font-weight: bold; cursor: pointer; }
+        /* 縮圖導航 */
+        .tray { display: flex; gap: 12px; overflow-x: auto; padding: 15px 5px; scrollbar-width: none; }
+        .t-card { width: 75px; height: 50px; border-radius: 10px; border: 2px solid #eee; object-fit: cover; cursor: pointer; flex-shrink: 0; transition: 0.2s; background: #fff; }
+        .t-card.active { border-color: #00b900; transform: scale(1.1); box-shadow: 0 5px 15px rgba(0,185,0,0.25); }
+        .t-plus { width: 75px; height: 50px; border-radius: 10px; border: 2px dashed #ccc; display: flex; align-items: center; justify-content: center; color: #bbb; font-size: 28px; cursor: pointer; flex-shrink: 0; }
+
+        /* 自定義選單 (Popup) */
+        #pop-menu { position: fixed; bottom: -100%; left: 0; right: 0; background: white; border-radius: 25px 25px 0 0; padding: 20px; box-shadow: 0 -5px 30px rgba(0,0,0,0.2); z-index: 1000; transition: 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
+        #pop-menu.show { bottom: 0; }
+        .pop-option { padding: 15px; text-align: center; font-size: 17px; font-weight: 500; border-bottom: 1px solid #f0f0f0; color: #333; }
+        .pop-option:last-child { border: none; color: #ff3b30; }
+        .pop-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.4); display: none; z-index: 999; }
+
+        /* 底部動作 */
+        .action-bar { position: fixed; bottom: 0; left: 0; right: 0; background: rgba(255,255,255,0.96); padding: 15px 25px; display: flex; flex-direction: column; align-items: center; z-index: 900; }
+        .btn-go { width: 100%; max-width: 450px; background: #00b900; color: white; padding: 18px; border: none; border-radius: 20px; font-size: 19px; font-weight: bold; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-        <span style="font-weight:bold; color:#00b900; font-size:18px;">𓃥 白六賀卡·超</span>
-        <span id="mode-info" style="font-size:10px; padding:3px 10px; border-radius:12px; background:#eee;"></span>
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+        <span style="font-weight:900; color:#00b900; font-size:20px;">𓃥 白六賀卡·超</span>
+        <span id="label-mode" style="font-size:10px; padding:4px 12px; border-radius:15px; background:#eee;">載入中</span>
     </div>
 
-    <div class="edit-panel">
-        <div class="inputs">
+    <div class="config-row">
+        <div class="main-inputs">
             <label>收件人 (To)</label>
-            <input type="text" id="edit-to" placeholder="收件人..." oninput="syncData('to')">
+            <input type="text" id="val-to" placeholder="誰收件？" oninput="sync('to')">
             <label>祝福語 (Message)</label>
-            <textarea id="edit-msg" rows="2" placeholder="祝你有個美好的一天！" oninput="syncData('msg')"></textarea>
+            <textarea id="val-msg" rows="2" placeholder="想說的話..." oninput="sync('msg')"></textarea>
         </div>
-        <div class="styler">
+        <div class="style-inputs">
             <label>字體大小</label>
-            <select id="edit-ts" onchange="syncData('ts')">
-                <option value="md">中</option>
-                <option value="lg">大</option>
-                <option value="xl" selected>特大</option>
+            <select id="val-ts" onchange="sync('ts')">
+                <option value="md">中</option><option value="lg">大</option><option value="xl" selected>特大</option>
             </select>
             <label>文字顏色</label>
-            <input type="color" id="edit-tc" value="#333333" onchange="syncData('tc')">
+            <input type="color" id="val-tc" value="#333333" onchange="sync('tc')">
         </div>
     </div>
 
-    <div class="viewport">
-        <div id="croppie-el"></div>
-        <img id="fixed-img">
-        <div class="overlay">
+    <div class="stage">
+        <div id="croppie-wrap"></div>
+        <img id="view-fixed">
+        <div class="text-layer">
             <span id="p-to" style="display:block; font-weight:bold;">To: 朋友</span>
             <span id="p-msg" style="display:block;">祝你有個美好的一天！</span>
         </div>
     </div>
 
-    <div class="thumb-nav" id="thumb-list">
-        <div class="t-add" onclick="document.getElementById('file-in').click()">+</div>
+    <div class="tray" id="tray-list">
+        <div class="t-plus" onclick="document.getElementById('file-in').click()">+</div>
         <input type="file" id="file-in" hidden accept="image/*" onchange="handleFile(this)">
     </div>
 </div>
 
-<div class="actions">
-    <button id="mainBtn" class="btn-send" onclick="sendCarousel()">🚀 發送批次賀卡組合</button>
-    <div id="status-hint" style="font-size:10px; color:#bbb; margin-top:8px;">支援多圖裁切與快速轉傳</div>
+<div class="pop-overlay" id="overlay" onclick="closeMenu()"></div>
+<div id="pop-menu">
+    <div style="text-align:center; color:#999; font-size:12px; margin-bottom:10px;" id="pop-title">管理賀卡分頁</div>
+    <div class="pop-option" onclick="doSwitch()">📖 切換至此頁</div>
+    <div class="pop-option" onclick="triggerChange()">📷 更換照片</div>
+    <div class="pop-option" onclick="doDelete()">🗑️ 刪除此分頁</div>
+    <div class="pop-option" onclick="closeMenu()" style="font-weight:normal; color:#999;">取消</div>
+</div>
+
+<div class="action-bar">
+    <button id="btn-submit" class="btn-go" onclick="submitAll()">🚀 發送 Carousel 組合</button>
 </div>
 
 <script>
@@ -88,192 +101,181 @@
     const CLOUD_NAME = 'dnwwaush7';
     const UPLOAD_PRESET = 'ml_default';
     
-    let croppieInst;
-    let isForward = false;
-    let cardSet = []; 
-    let currentIdx = 0;
+    let cp;
+    let isFwd = false;
+    let cards = []; 
+    let activeIdx = 0;
+    let targetIdx = 0; // 選單點擊的目標
 
-    const initialDefault = 'https://res.cloudinary.com/dnwwaush7/image/upload/v1774012083/cdegpgigtlzghqnjoadb.jpg';
+    const defImg = 'https://res.cloudinary.com/dnwwaush7/image/upload/v1774012083/cdegpgigtlzghqnjoadb.jpg';
 
     async function init() {
         await liff.init({ liffId: LIFF_ID });
-        const params = new URLSearchParams(window.location.search);
+        const p = new URLSearchParams(window.location.search);
         
-        if (params.has('data')) {
-            isForward = true;
-            document.getElementById('mode-info').innerText = "快速轉傳";
-            document.getElementById('croppie-el').style.display = 'none';
-            document.getElementById('fixed-img').style.display = 'block';
-            cardSet = JSON.parse(decodeURIComponent(params.get('data')));
+        if (p.has('data')) {
+            isFwd = true;
+            document.getElementById('label-mode').innerText = "快速轉傳";
+            document.getElementById('croppie-wrap').style.display = 'none';
+            document.getElementById('view-fixed').style.display = 'block';
+            cards = JSON.parse(decodeURIComponent(p.get('data')));
         } else {
-            isForward = false;
-            document.getElementById('mode-info').innerText = "全新製作";
-            initCroppie();
-            // 初始第一張
-            cardSet = [{ img: initialDefault, to: '', msg: '', ts: 'xl', tc: '#333333', isSynced: true }];
+            isFwd = false;
+            document.getElementById('label-mode').innerText = "全新製作";
+            cp = new Croppie(document.getElementById('croppie-wrap'), {
+                viewport: { width: 300, height: 195, type: 'square' },
+                boundary: { width: '100%', height: '100%' },
+                showZoomer: false
+            });
+            cards = [{ img: defImg, to: '', msg: '', ts: 'xl', tc: '#333333', sync: true }];
         }
-        renderThumbs();
-        loadCard(0);
+        drawTray();
+        load(0);
     }
 
-    function initCroppie() {
-        croppieInst = new Croppie(document.getElementById('croppie-el'), {
-            viewport: { width: 300, height: 195, type: 'square' },
-            boundary: { width: '100%', height: '100%' },
-            showZoomer: false
-        });
-    }
-
-    function renderThumbs() {
-        const list = document.getElementById('thumb-list');
-        list.querySelectorAll('.t-box').forEach(e => e.remove());
-        cardSet.forEach((c, i) => {
+    function drawTray() {
+        const tray = document.getElementById('tray-list');
+        tray.querySelectorAll('.t-card').forEach(e => e.remove());
+        cards.forEach((c, i) => {
             const img = document.createElement('img');
-            img.className = `t-box ${i === currentIdx ? 'active' : ''}`;
+            img.className = `t-card ${i === activeIdx ? 'active' : ''}`;
             img.src = c.img;
-            img.onclick = () => switchTab(i);
-            list.insertBefore(img, list.querySelector('.t-add'));
+            img.onclick = () => openMenu(i);
+            tray.insertBefore(img, tray.querySelector('.t-plus'));
         });
-        list.querySelector('.t-add').style.display = (isForward || cardSet.length >= 10) ? 'none' : 'flex';
+        tray.querySelector('.t-plus').style.display = (isFwd || cards.length >= 10) ? 'none' : 'flex';
     }
 
-    async function switchTab(idx) {
-        if (!isForward) {
-            // 切換前存下當前裁切結果
-            const blob = await croppieInst.result({ type: 'blob', size: { width: 800 }, format: 'jpeg' });
-            cardSet[currentIdx].blob = blob;
-            cardSet[currentIdx].img = URL.createObjectURL(blob);
+    // 選單操作
+    function openMenu(idx) {
+        targetIdx = idx;
+        document.getElementById('pop-title').innerText = `管理第 ${idx+1} 頁賀卡`;
+        document.getElementById('overlay').style.display = 'block';
+        document.getElementById('pop-menu').classList.add('show');
+    }
+
+    function closeMenu() {
+        document.getElementById('overlay').style.display = 'none';
+        document.getElementById('pop-menu').classList.remove('show');
+    }
+
+    async function doSwitch() {
+        if (!isFwd) {
+            const blob = await cp.result({ type: 'blob', size: { width: 800 }, format: 'jpeg' });
+            cards[activeIdx].blob = blob;
+            cards[activeIdx].img = URL.createObjectURL(blob);
         }
-        currentIdx = idx;
-        renderThumbs();
-        loadCard(idx);
+        activeIdx = targetIdx;
+        drawTray();
+        load(activeIdx);
+        closeMenu();
     }
 
-    function loadCard(idx) {
-        const c = cardSet[idx];
-        document.getElementById('edit-to').value = c.to;
-        document.getElementById('edit-msg').value = c.msg;
-        document.getElementById('edit-ts').value = c.ts;
-        document.getElementById('edit-tc').value = c.tc;
-        
-        if (isForward) {
-            document.getElementById('fixed-img').src = c.img;
-        } else {
-            croppieInst.bind({ url: c.img });
-        }
-        updateUI();
+    function triggerChange() {
+        document.getElementById('file-in').click();
+        closeMenu();
     }
 
-    function syncData(field) {
-        const val = document.getElementById(`edit-${field}`).value;
-        cardSet[currentIdx][field] = val;
+    function doDelete() {
+        if (cards.length <= 1) return alert("至少保留一張圖");
+        cards.splice(targetIdx, 1);
+        if (activeIdx >= cards.length) activeIdx = cards.length - 1;
+        drawTray();
+        load(activeIdx);
+        closeMenu();
+    }
 
-        // 如果是改第一張，連動後面
-        if (currentIdx === 0) {
-            for (let i = 1; i < cardSet.length; i++) {
-                if (cardSet[i].isSynced) {
-                    cardSet[i][field] = val;
-                }
+    function load(idx) {
+        const c = cards[idx];
+        document.getElementById('val-to').value = c.to;
+        document.getElementById('val-msg').value = c.msg;
+        document.getElementById('val-ts').value = c.ts;
+        document.getElementById('val-tc').value = c.tc;
+        if (isFwd) document.getElementById('view-fixed').src = c.img;
+        else cp.bind({ url: c.img });
+        refreshUI();
+    }
+
+    function sync(field) {
+        const val = document.getElementById(`val-${field}`).value;
+        cards[activeIdx][field] = val;
+        if (activeIdx === 0) {
+            for (let i = 1; i < cards.length; i++) {
+                if (cards[i].sync) cards[i][field] = val;
             }
         } else {
-            cardSet[currentIdx].isSynced = false;
+            cards[activeIdx].sync = false;
         }
-        updateUI();
+        refreshUI();
     }
 
-    function updateUI() {
-        const c = cardSet[currentIdx];
-        const t = document.getElementById('p-to');
-        const m = document.getElementById('p-msg');
-        
+    function refreshUI() {
+        const c = cards[activeIdx];
+        const t = document.getElementById('p-to'), m = document.getElementById('p-msg');
         t.innerText = "To: " + (c.to || "朋友");
         t.style.color = c.tc;
         t.style.fontSize = { md:'16px', lg:'20px', xl:'24px' }[c.ts];
-        
         m.innerText = c.msg || "祝你有個美好的一天！";
         m.style.color = c.tc;
-        m.style.fontSize = { md:'14px', lg:'16px', xl:'18px' }[c.ts === 'xl' ? 'md' : 'sm']; // 賀詞稍小一點
+        m.style.fontSize = { md:'14px', lg:'16px', xl:'18px' }[c.ts === 'xl' ? 'md' : 'sm'];
     }
 
     function handleFile(input) {
         if (input.files && input.files[0]) {
             const reader = new FileReader();
             reader.onload = e => {
-                // 如果是在第一張圖且還沒新增過其他圖，直接更換首圖
-                if (currentIdx === 0 && cardSet.length === 1 && cardSet[0].img === initialDefault) {
-                    cardSet[0].img = e.target.result;
-                    croppieInst.bind({ url: e.target.result });
-                    renderThumbs();
+                // 如果是透過選單「更換照片」
+                if (document.getElementById('pop-menu').classList.contains('show')) {
+                    cards[targetIdx].img = e.target.result;
+                    if (targetIdx === activeIdx) cp.bind({ url: e.target.result });
                 } else {
-                    // 否則新增一張
-                    cardSet.push({ 
-                        img: e.target.result, 
-                        to: cardSet[0].to, 
-                        msg: cardSet[0].msg, 
-                        ts: cardSet[0].ts, 
-                        tc: cardSet[0].tc, 
-                        isSynced: true 
-                    });
-                    switchTab(cardSet.length - 1);
+                    // 點擊「+」新增
+                    cards.push({ img: e.target.result, to: cards[0].to, msg: cards[0].msg, ts: cards[0].ts, tc: cards[0].tc, sync: true });
+                    activeIdx = cards.length - 1;
                 }
+                drawTray();
+                load(activeIdx);
             };
             reader.readAsDataURL(input.files[0]);
         }
     }
 
-    async function sendCarousel() {
-        const btn = document.getElementById('mainBtn');
+    async function submitAll() {
+        const btn = document.getElementById('btn-submit');
         btn.disabled = true;
-        document.getElementById('status-hint').innerText = "🚀 正在努力上傳照片...";
-
+        document.getElementById('status-hint').innerText = "⚡ 正在處理批次照片...";
         try {
-            if (!isForward) {
-                // 最後一張也要裁切
-                const lastBlob = await croppieInst.result({ type: 'blob', size: { width: 800 }, format: 'jpeg' });
-                cardSet[currentIdx].blob = lastBlob;
-
-                for (let i = 0; i < cardSet.length; i++) {
+            if (!isFwd) {
+                const lastBlob = await cp.result({ type: 'blob', size: { width: 800 }, format: 'jpeg' });
+                cards[activeIdx].blob = lastBlob;
+                for (let i = 0; i < cards.length; i++) {
                     const fd = new FormData();
-                    fd.append('file', cardSet[i].blob || cardSet[i].img);
+                    fd.append('file', cards[i].blob || cards[i].img);
                     fd.append('upload_preset', UPLOAD_PRESET);
                     const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`, { method: 'POST', body: fd });
                     const d = await res.json();
-                    cardSet[i].img = d.secure_url;
-                    delete cardSet[i].blob;
+                    cards[i].img = d.secure_url;
                 }
             }
-
-            const rawData = cardSet.map(c => ({ img: c.img, to: c.to, msg: c.msg, ts: c.ts, tc: c.tc }));
-            const shareUrl = `https://liff.line.me/${LIFF_ID}?data=${encodeURIComponent(JSON.stringify(rawData))}`;
-
-            const bubbles = rawData.map((c, i) => ({
-                "type": "bubble",
-                "size": "mega",
+            const cleanData = cards.map(c => ({ img: c.img, to: c.to, msg: c.msg, ts: c.ts, tc: c.tc }));
+            const shareUrl = `https://liff.me/${LIFF_ID}?data=${encodeURIComponent(JSON.stringify(cleanData))}`;
+            const bubbles = cleanData.map((c, i) => ({
+                "type": "bubble", "size": "mega",
                 "hero": { "type": "image", "url": c.img, "size": "full", "aspectRatio": "20:13", "aspectMode": "cover" },
-                "body": {
-                    "type": "box", "layout": "vertical", "contents": [
-                        { "type": "text", "text": `𓃥 白六賀卡·超 (${i+1}/${rawData.length})`, "weight": "bold", "color": "#00b900", "size": "xs" },
-                        { "type": "text", "text": "To: " + (c.to || "朋友"), "weight": "bold", "size": c.ts, "color": c.tc, "margin": "md" },
-                        { "type": "text", "text": c.msg || "祝你有個美好的一天！", "wrap": true, "margin": "sm", "size": "md", "color": c.tc }
-                    ]
-                },
-                "footer": {
-                    "type": "box", "layout": "horizontal", "spacing": "sm", "contents": [
-                        { "type": "button", "style": "primary", "color": "#00b900", "height": "sm", "action": { "type": "uri", "label": "快速轉傳", "uri": shareUrl } },
-                        { "type": "button", "style": "secondary", "color": "#eeeeee", "height": "sm", "action": { "type": "uri", "label": "重新製作", "uri": `https://liff.line.me/${LIFF_ID}` } }
-                    ]
-                }
+                "body": { "type": "box", "layout": "vertical", "contents": [
+                    { "type": "text", "text": `𓃥 白六賀卡·超 (${i+1}/${cleanData.length})`, "weight": "bold", "color": "#00b900", "size": "xs" },
+                    { "type": "text", "text": "To: " + (c.to || "朋友"), "weight": "bold", "size": c.ts, "color": c.tc, "margin": "md" },
+                    { "type": "text", "text": c.msg || "祝你有個美好的一天！", "wrap": true, "margin": "sm", "size": "md", "color": c.tc }
+                ]},
+                "footer": { "type": "box", "layout": "horizontal", "spacing": "sm", "contents": [
+                    { "type": "button", "style": "primary", "color": "#00b900", "height": "sm", "action": { "type": "uri", "label": "快速轉傳", "uri": shareUrl } },
+                    { "type": "button", "style": "secondary", "color": "#eeeeee", "height": "sm", "action": { "type": "uri", "label": "重新製作", "uri": `https://liff.me/${LIFF_ID}` } }
+                ]}
             }));
-
-            await liff.shareTargetPicker([{
-                "type": "flex",
-                "altText": "𓃥 收到一份白六賀卡·超組合！",
-                "contents": { "type": "carousel", "contents": bubbles }
-            }]);
+            await liff.shareTargetPicker([{ "type": "flex", "altText": "𓃥 收到一份白六賀卡·超組合！", "contents": { "type": "carousel", "contents": bubbles }}]);
             liff.closeWindow();
-        } catch (e) { alert("發送失敗"); btn.disabled = false; }
+        } catch (e) { alert("失敗"); btn.disabled = false; }
     }
-
     init();
 </script>
 </body>
