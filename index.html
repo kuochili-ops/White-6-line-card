@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>𓃥 白六賀卡製作</title>
+    <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+    <style>
+        body { font-family: sans-serif; background-color: #f4f7f6; padding: 20px; color: #333; }
+        .container { max-width: 500px; margin: 0 auto; background: white; padding: 25px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        h2 { color: #1DB446; text-align: center; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; }
+        input, textarea, select { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; }
+        button { width: 100%; padding: 12px; background-color: #1DB446; color: white; border: none; border-radius: 8px; font-size: 16px; cursor: pointer; margin-top: 10px; }
+        button.secondary { background-color: #555; }
+        .preview-box { margin-top: 20px; border: 2px dashed #1DB446; padding: 15px; border-radius: 10px; text-align: center; }
+        #previewImg { width: 100%; border-radius: 5px; margin-bottom: 10px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>𓃥 白六賀卡製作器</h2>
+    
+    <div class="form-group">
+        <label>收件人姓名</label>
+        <input type="text" id="targetName" placeholder="例如：好朋友小明">
+    </div>
+
+    <div class="form-group">
+        <label>賀卡主題</label>
+        <select id="theme" onchange="updatePreview()">
+            <option value="https://images.unsplash.com/photo-1513519245088-0e12902e5a38?w=800">簡約慶祝</option>
+            <option value="https://images.unsplash.com/photo-1530103043960-ef38714abb15?w=800">派對氣氛</option>
+            <option value="https://images.unsplash.com/photo-1496337589254-7e19d01ced44?w=800">溫馨感激</option>
+        </select>
+    </div>
+
+    <div class="form-group">
+        <label>祝福的話</label>
+        <textarea id="message" rows="3" placeholder="輸入你想說的話..."></textarea>
+    </div>
+
+    <div class="preview-box">
+        <p style="font-size: 12px; color: #888;">預覽效果</p>
+        <img id="previewImg" src="https://images.unsplash.com/photo-1513519245088-0e12902e5a38?w=800">
+        <div id="previewText" style="font-weight: bold;"></div>
+    </div>
+
+    <button onclick="sendCard()">傳送賀卡給好友</button>
+    <button class="secondary" onclick="shareApp()">推薦這個工具給朋友</button>
+</div>
+
+<script>
+    // 請替換成你的 LIFF ID
+    const MY_LIFF_ID = 'YOUR_LIFF_ID'; 
+
+    async function initLIFF() {
+        try {
+            await liff.init({ liffId: MY_LIFF_ID });
+            if (!liff.isLoggedIn()) {
+                liff.login();
+            }
+        } catch (err) {
+            console.error('LIFF 初始化失敗', err);
+        }
+    }
+
+    function updatePreview() {
+        document.getElementById('previewImg').src = document.getElementById('theme').value;
+    }
+
+    async function sendCard() {
+        const name = document.getElementById('targetName').value || '好友';
+        const msg = document.getElementById('message').value || '祝你今天心情愉快！';
+        const img = document.getElementById('theme').value;
+
+        if (!liff.isApiAvailable('shareTargetPicker')) {
+            alert('請在 LINE App 內開啟此功能');
+            return;
+        }
+
+        const flexContent = {
+            "type": "bubble",
+            "hero": { "type": "image", "url": img, "size": "full", "aspectRatio": "20:13", "aspectMode": "cover" },
+            "body": {
+                "type": "box", "layout": "vertical", "contents": [
+                    { "type": "text", "text": "𓃥 白六賀卡", "weight": "bold", "color": "#1DB446", "size": "sm" },
+                    { "type": "text", "text": "To: " + name, "weight": "bold", "size": "xl", "margin": "md" },
+                    { "type": "text", "text": msg, "wrap": true, "margin": "lg", "color": "#555555" }
+                ]
+            },
+            "footer": {
+                "type": "box", "layout": "vertical", "contents": [
+                    { "type": "button", "style": "primary", "color": "#1DB446", "action": { "type": "uri", "label": "我也要製作", "uri": "https://liff.line.me/" + MY_LIFF_ID } }
+                ]
+            }
+        };
+
+        const res = await liff.shareTargetPicker([{ "type": "flex", "altText": "收到一份賀卡！", "contents": flexContent }]);
+        if (res) liff.closeWindow();
+    }
+
+    async function shareApp() {
+        await liff.shareTargetPicker([{
+            "type": "flex",
+            "altText": "推薦一個超棒的賀卡製作器！",
+            "contents": {
+                "type": "bubble",
+                "body": {
+                    "type": "box", "layout": "vertical", "contents": [
+                        { "type": "text", "text": "𓃥 白六賀卡製作器", "weight": "bold", "size": "lg" },
+                        { "type": "text", "text": "動動手指就能送出精美的 Flex Message 賀卡，快來試試！", "wrap": true, "size": "sm", "margin": "sm" }
+                    ]
+                },
+                "footer": {
+                    "type": "box", "layout": "vertical", "contents": [
+                        { "type": "button", "style": "link", "action": { "type": "uri", "label": "立即開啟", "uri": "https://liff.line.me/" + MY_LIFF_ID } }
+                    ]
+                }
+            }
+        }]);
+    }
+
+    initLIFF();
+</script>
+
+</body>
+</html>
