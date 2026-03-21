@@ -11,7 +11,7 @@
         body { font-family: -apple-system, sans-serif; background-color: #f2f4f7; margin: 0; padding: 10px; padding-bottom: 110px; }
         .container { max-width: 500px; margin: 0 auto; background: white; padding: 15px; border-radius: 28px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); }
         
-        /* 編輯選單：共用介面，數據獨立 */
+        /* 編輯選單 */
         .editor-box { display: flex; gap: 10px; margin-bottom: 10px; background: #fafafa; padding: 12px; border-radius: 20px; border: 1px solid #eee; }
         .input-main { flex: 2; }
         .input-style { flex: 1.2; border-left: 1px solid #eee; padding-left: 10px; }
@@ -24,13 +24,13 @@
         #img-fix { width: 100%; height: 100%; object-fit: cover; display: none; }
         .overlay { position: absolute; bottom: 12%; left: 20px; right: 20px; pointer-events: none; z-index: 10; text-shadow: 0 2px 6px rgba(255,255,255,0.8); }
 
-        /* 縮圖操作：單擊切換，雙擊選單 */
+        /* 縮圖操作 */
         .tray { display: flex; gap: 10px; overflow-x: auto; padding: 10px 5px; scrollbar-width: none; }
         .t-item { width: 75px; height: 50px; border-radius: 10px; border: 2px solid #eee; object-fit: cover; cursor: pointer; flex-shrink: 0; transition: 0.2s; }
-        .t-item.active { border-color: #00b900; transform: scale(1.05); box-shadow: 0 4px 10px rgba(0,185,0,0.2); }
+        .t-item.active { border-color: #00b900; transform: scale(1.05); }
         .t-add { width: 75px; height: 50px; border-radius: 10px; border: 2px dashed #ccc; display: flex; align-items: center; justify-content: center; color: #ccc; font-size: 26px; cursor: pointer; flex-shrink: 0; }
 
-        /* 下拉選單 Popup */
+        /* 下拉選單 */
         #menu { position: fixed; bottom: -100%; left: 0; right: 0; background: white; border-radius: 25px 25px 0 0; padding: 20px; box-shadow: 0 -5px 25px rgba(0,0,0,0.15); z-index: 1000; transition: 0.3s; }
         #menu.open { bottom: 0; }
         .opt { padding: 15px; text-align: center; font-size: 16px; font-weight: 500; border-bottom: 1px solid #f9f9f9; }
@@ -57,9 +57,11 @@
             <textarea id="v-msg" rows="2" placeholder="內容" oninput="update('msg')"></textarea>
         </div>
         <div class="input-style">
-            <label>文字大小</label>
+            <label>收件人大小</label>
             <select id="v-ts" onchange="update('ts')"><option value="md">中</option><option value="lg">大</option><option value="xl" selected>特大</option></select>
-            <label>文字顏色</label>
+            <label>留言大小</label>
+            <select id="v-ms" onchange="update('ms')"><option value="sm">小</option><option value="md" selected>中</option><option value="lg">大</option></select>
+            <label>通用顏色</label>
             <input type="color" id="v-tc" value="#333333" onchange="update('tc')">
         </div>
     </div>
@@ -81,7 +83,7 @@
 
 <div class="mask" id="mask" onclick="closeMenu()"></div>
 <div id="menu">
-    <div class="opt" onclick="triggerFile()">📷 更換這張照片</div>
+    <div class="opt" onclick="triggerFile()">📷 更換這張照片 (保留文字設定)</div>
     <div class="opt del" onclick="doDel()">🗑️ 刪除此分頁</div>
     <div class="opt" onclick="closeMenu()" style="color:#999">取消</div>
 </div>
@@ -114,7 +116,7 @@
                 viewport: { width: 300, height: 195, type: 'square' },
                 boundary: { width: '100%', height: '100%' }, showZoomer: false
             });
-            cards = [{ img: 'https://res.cloudinary.com/dnwwaush7/image/upload/v1774012083/cdegpgigtlzghqnjoadb.jpg', to: '', msg: '', ts: 'xl', tc: '#333333', sync: true }];
+            cards = [{ img: 'https://res.cloudinary.com/dnwwaush7/image/upload/v1774012083/cdegpgigtlzghqnjoadb.jpg', to: '', msg: '', ts: 'xl', ms: 'md', tc: '#333333', sync: true }];
         }
         render();
         load(0);
@@ -127,8 +129,6 @@
             const img = document.createElement('img');
             img.className = `t-item ${i === active ? 'active' : ''}`;
             img.src = c.img;
-            
-            // 單擊切換，雙擊選單
             let timer;
             img.onclick = () => {
                 clearTimeout(timer);
@@ -140,7 +140,6 @@
                 document.getElementById('mask').style.display = 'block';
                 document.getElementById('menu').classList.add('open');
             };
-            
             t.insertBefore(img, t.querySelector('.t-add'));
         });
         t.querySelector('.t-add').style.display = (isFwd || cards.length >= 10) ? 'none' : 'flex';
@@ -151,6 +150,7 @@
         document.getElementById('v-to').value = c.to;
         document.getElementById('v-msg').value = c.msg;
         document.getElementById('v-ts').value = c.ts;
+        document.getElementById('v-ms').value = c.ms || 'md';
         document.getElementById('v-tc').value = c.tc;
         if (isFwd) document.getElementById('img-fix').src = c.img;
         else cp.bind({ url: c.img });
@@ -160,7 +160,6 @@
     function update(f) {
         const v = document.getElementById(`v-${f}`).value;
         cards[active][f] = v;
-        // 首頁同步邏輯
         if (active === 0) {
             for (let i = 1; i < cards.length; i++) {
                 if (cards[i].sync) cards[i][f] = v;
@@ -177,7 +176,7 @@
         t.style.fontSize = { md:'16px', lg:'20px', xl:'24px' }[c.ts];
         m.innerText = c.msg || "祝你有個美好的一天！";
         m.style.color = c.tc;
-        m.style.fontSize = { md:'14px', lg:'16px', xl:'18px' }[c.ts === 'xl' ? 'md' : 'sm'];
+        m.style.fontSize = { sm:'13px', md:'16px', lg:'20px' }[c.ms || 'md'];
     }
 
     function handleFile(input) {
@@ -185,11 +184,13 @@
             const reader = new FileReader();
             reader.onload = e => {
                 if (document.getElementById('menu').classList.contains('open')) {
+                    // 更換照片：僅更換圖片源，保留文字數據
                     cards[menuTarget].img = e.target.result;
                     if (menuTarget === active) cp.bind({ url: e.target.result });
                     closeMenu();
                 } else {
-                    cards.push({ img: e.target.result, to: cards[0].to, msg: cards[0].msg, ts: cards[0].ts, tc: cards[0].tc, sync: true });
+                    // 新增照片
+                    cards.push({ img: e.target.result, to: cards[0].to, msg: cards[0].msg, ts: cards[0].ts, ms: cards[0].ms || 'md', tc: cards[0].tc, sync: true });
                     active = cards.length - 1;
                 }
                 render(); load(active);
@@ -224,7 +225,7 @@
                     cards[i].img = d.secure_url;
                 }
             }
-            const data = cards.map(c => ({ img: c.img, to: c.to, msg: c.msg, ts: c.ts, tc: c.tc }));
+            const data = cards.map(c => ({ img: c.img, to: c.to, msg: c.msg, ts: c.ts, ms: c.ms || 'md', tc: c.tc }));
             const url = `https://liff.line.me/${LIFF_ID}?data=${encodeURIComponent(JSON.stringify(data))}`;
             const bubbles = data.map((c, i) => ({
                 "type": "bubble", "size": "mega",
@@ -232,7 +233,7 @@
                 "body": { "type": "box", "layout": "vertical", "contents": [
                     { "type": "text", "text": `𓃥 白六賀卡·超 (${i+1}/${data.length})`, "weight": "bold", "color": "#00b900", "size": "xs" },
                     { "type": "text", "text": "To: " + (c.to || "朋友"), "weight": "bold", "size": c.ts, "color": c.tc, "margin": "md" },
-                    { "type": "text", "text": c.msg || "祝你有個美好的一天！", "wrap": true, "margin": "sm", "size": "md", "color": c.tc }
+                    { "type": "text", "text": c.msg || "祝你有個美好的一天！", "wrap": true, "margin": "sm", "size": c.ms, "color": c.tc }
                 ]},
                 "footer": { "type": "box", "layout": "horizontal", "spacing": "sm", "contents": [
                     { "type": "button", "style": "primary", "color": "#00b900", "height": "sm", "action": { "type": "uri", "label": "快速轉傳", "uri": url } },
