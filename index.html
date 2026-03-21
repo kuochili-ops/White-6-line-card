@@ -71,32 +71,20 @@
         document.getElementById('previewImg').src = document.getElementById('theme').value;
     }
 
-    async function sendCard() {
-        const name = document.getElementById('targetName').value || '好友';
-        const msg = document.getElementById('message').value || '祝你今天心情愉快！';
-        const img = document.getElementById('theme').value;
+async function sendCard() {
+    // 檢查初始化狀態
+    if (!liff.isInClient()) {
+        alert('偵測到不在 LINE App 內');
+        return;
+    }
 
-        if (!liff.isApiAvailable('shareTargetPicker')) {
-            alert('請在 LINE App 內開啟此功能');
-            return;
-        }
-
-        const flexContent = {
-            "type": "bubble",
-            "hero": { "type": "image", "url": img, "size": "full", "aspectRatio": "20:13", "aspectMode": "cover" },
-            "body": {
-                "type": "box", "layout": "vertical", "contents": [
-                    { "type": "text", "text": "𓃥 白六賀卡", "weight": "bold", "color": "#1DB446", "size": "sm" },
-                    { "type": "text", "text": "To: " + name, "weight": "bold", "size": "xl", "margin": "md" },
-                    { "type": "text", "text": msg, "wrap": true, "margin": "lg", "color": "#555555" }
-                ]
-            },
-            "footer": {
-                "type": "box", "layout": "vertical", "contents": [
-                    { "type": "button", "style": "primary", "color": "#1DB446", "action": { "type": "uri", "label": "我也要製作", "uri": "https://liff.line.me/" + MY_LIFF_ID } }
-                ]
-            }
-        };
+    if (!liff.isApiAvailable('shareTargetPicker')) {
+        alert('後台 Share Target Picker 權限可能未開啟');
+        return;
+    }
+    
+    // ... 原本的發送邏輯 ...
+}
 
         const res = await liff.shareTargetPicker([{ "type": "flex", "altText": "收到一份賀卡！", "contents": flexContent }]);
         if (res) liff.closeWindow();
