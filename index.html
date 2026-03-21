@@ -15,19 +15,14 @@
         .right-format { flex: 1; background: #f0f9f0; padding: 8px; border-radius: 10px; border: 1px solid #d0e8d0; }
         label { font-size: 10px; color: #999; font-weight: bold; margin-bottom: 2px; display: block; }
         input, textarea, select { width: 100%; padding: 6px; border: 1px solid #eee; border-radius: 6px; font-size: 14px; box-sizing: border-box; margin-bottom: 6px; }
-        
-        /* 預覽與裁切區 */
         .preview-container { margin: 10px 0; border: 2px solid #00b900; border-radius: 15px; overflow: hidden; position: relative; background: #000; line-height: 0; }
         #upload-demo { width: 100%; height: 260px; }
         #static-img { width: 100%; display: none; }
-        
         .text-overlay { position: absolute; bottom: 30px; left: 15px; right: 15px; pointer-events: none; z-index: 10; text-shadow: 0 1px 4px rgba(255,255,255,0.8); line-height: 1.4; }
         #p-brand { font-size: 10px; color: #00b900; font-weight: bold; display: block; }
         #p-name, #p-msg { display: block; }
-
         .btn-main { width: 100%; background-color: #00b900; color: white; padding: 16px; border: none; border-radius: 12px; font-size: 18px; font-weight: bold; cursor: pointer; margin-top: 10px; }
         .btn-main:disabled { background-color: #ccc; }
-        
         #status { text-align: center; font-size: 10px; color: #bbb; margin-top: 10px; }
         .mode-hint { font-size: 11px; font-weight: bold; margin-bottom: 8px; text-align: center; padding: 4px; border-radius: 5px; }
     </style>
@@ -36,13 +31,12 @@
 
 <div class="container">
     <div id="mode-hint" class="mode-hint"></div>
-
     <div class="input-section">
         <div class="left-fields">
             <label>收件人</label>
-            <input type="text" id="targetName" placeholder="收件人姓名" onfocus="setCurrentField('targetName')" oninput="updateUI()">
+            <input type="text" id="targetName" placeholder="姓名" onfocus="setCurrentField('targetName')" oninput="updateUI()">
             <label>祝福語</label>
-            <textarea id="message" rows="2" placeholder="祝福內容" onfocus="setCurrentField('message')" oninput="updateUI()"></textarea>
+            <textarea id="message" rows="2" placeholder="內容" onfocus="setCurrentField('message')" oninput="updateUI()"></textarea>
         </div>
         <div class="right-format">
             <label>大小</label>
@@ -68,11 +62,11 @@
 
     <div id="upload-area" style="text-align: center; display: none;">
         <input type="file" id="f" hidden onchange="readF(this)">
-        <span onclick="document.getElementById('f').click()" style="color:#00b900; font-size:12px; cursor:pointer; text-decoration:underline;">📷 點此上傳/更換背景照片</span>
+        <span onclick="document.getElementById('f').click()" style="color:#00b900; font-size:12px; cursor:pointer; text-decoration:underline;">📷 更換背景照片</span>
     </div>
 
     <button id="sendBtn" class="btn-main" onclick="executeSend()">🚀 點此傳送</button>
-    <div id="status">𓃥 系統初始化中...</div>
+    <div id="status">𓃥 初始化中...</div>
 </div>
 
 <script>
@@ -90,12 +84,10 @@
         try {
             await liff.init({ liffId: LIFF_ID });
             if (!liff.isLoggedIn()) liff.login();
-
             const params = new URLSearchParams(window.location.search);
             const hintBox = document.getElementById('mode-hint');
 
             if (params.has('img')) {
-                // --- 快速轉傳模式 ---
                 isForwardMode = true;
                 currentImageUrl = params.get('img');
                 document.getElementById('targetName').value = params.get('to') || '';
@@ -104,15 +96,13 @@
                 formats.targetName.color = params.get('tc') || '#333333';
                 formats.message.size = params.get('ms') || 'md';
                 formats.message.color = params.get('mc') || '#333333';
-
-                hintBox.innerText = "🔗 快速轉傳模式：照片已固定，可修改文字";
+                hintBox.innerText = "🔗 快速轉傳模式";
                 hintBox.style.background = "#fff3e0"; hintBox.style.color = "#ef6c00";
                 document.getElementById('upload-demo').style.display = 'none';
                 document.getElementById('static-img').style.display = 'block';
                 document.getElementById('static-img').src = currentImageUrl;
             } else {
-                // --- 全新製作模式 ---
-                hintBox.innerText = "🆕 全新製作模式：請自由編輯照片與文字";
+                hintBox.innerText = "🆕 全新製作模式";
                 hintBox.style.background = "#e3f2fd"; hintBox.style.color = "#1976d2";
                 document.getElementById('upload-area').style.display = 'block';
                 croppieInstance = new Croppie(document.getElementById('upload-demo'), {
@@ -121,7 +111,6 @@
                 });
                 croppieInstance.bind({ url: currentImageUrl });
             }
-            
             document.getElementById('status').innerText = "𓃥 準備就緒";
             setCurrentField('targetName'); 
             updateUI();
@@ -174,18 +163,13 @@
                 const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`, { method: 'POST', body: fd });
                 const data = await res.json();
                 finalImg = data.secure_url;
-            } catch (e) { alert("上傳失敗"); btn.disabled = false; return; }
+            } catch (e) { alert("失敗"); btn.disabled = false; return; }
         }
 
         const to = document.getElementById('targetName').value || '好友';
         const msg = document.getElementById('message').value || '祝你有個美好的一天！';
         const baseUrl = `https://liff.line.me/${LIFF_ID}`;
-        
-        // 分離參數：轉傳網址與重新製作網址
         const params = `?img=${encodeURIComponent(finalImg)}&to=${encodeURIComponent(to)}&msg=${encodeURIComponent(msg)}&ts=${formats.targetName.size}&tc=${encodeURIComponent(formats.targetName.color)}&ms=${formats.message.size}&mc=${encodeURIComponent(formats.message.color)}`;
-        
-        const forwardUrl = baseUrl + params; // 帶參數 (用於快速轉傳)
-        const resetUrl = baseUrl; // 不帶參數 (用於重新製作)
 
         liff.shareTargetPicker([{
             "type": "flex",
@@ -201,15 +185,14 @@
                     ]
                 },
                 "footer": {
-                    "type": "box", "layout": "vertical", "spacing": "sm", "contents": [
-                        { "type": "button", "style": "primary", "color": "#00b900", "action": { "type": "uri", "label": "🚀 快速轉傳", "uri": forwardUrl } },
-                        { "type": "button", "style": "secondary", "color": "#eeeeee", "action": { "type": "uri", "label": "🆕 重新製作", "uri": resetUrl } }
+                    "type": "box", "layout": "horizontal", "spacing": "sm", "contents": [
+                        { "type": "button", "style": "primary", "color": "#00b900", "height": "sm", "action": { "type": "uri", "label": "快速轉傳", "uri": baseUrl + params } },
+                        { "type": "button", "style": "secondary", "color": "#eeeeee", "height": "sm", "action": { "type": "uri", "label": "重新製作", "uri": baseUrl } }
                     ]
                 }
             }
         }]).then(() => liff.closeWindow()).catch(() => { btn.disabled = false; });
     }
-
     init();
 </script>
 
