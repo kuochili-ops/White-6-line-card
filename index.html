@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>𓃥 白六賀卡製作</title>
+    <title>𓃥 白六賀卡</title>
     <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/croppie/2.6.5/croppie.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/croppie/2.6.5/croppie.min.js"></script>
@@ -17,7 +17,6 @@
         
         label { font-size: 11px; color: #888; font-weight: bold; margin-bottom: 3px; display: block; }
         input, textarea, select { width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; box-sizing: border-box; margin-bottom: 8px; }
-        input:focus, textarea:focus { border-color: #00b900; outline: none; background: #fff; }
         
         .editor-container { margin: 10px 0; border: 2px solid #00b900; border-radius: 15px; overflow: hidden; position: relative; background: #eee; }
         #upload-demo { width: 100%; height: 260px; }
@@ -30,11 +29,14 @@
         #p-name { font-weight: bold; display: block; margin-bottom: 5px; }
         #p-msg { line-height: 1.4; display: block; }
 
-        .btn { width: 100%; padding: 14px; border: none; border-radius: 12px; font-size: 16px; font-weight: bold; cursor: pointer; }
-        .btn-main { background-color: #00b900; color: white; margin-top: 10px; }
-        .btn-main:disabled { background-color: #ccc; }
+        /* 按鈕配置 */
+        .btn-group { display: flex; gap: 8px; margin-top: 10px; }
+        .btn { border: none; border-radius: 12px; font-weight: bold; cursor: pointer; transition: 0.2s; }
+        .btn-forward { flex: 2; background-color: #00b900; color: white; padding: 15px; font-size: 16px; }
+        .btn-custom { flex: 1; background-color: #e8f5e9; color: #00b900; padding: 10px; font-size: 13px; border: 1px solid #c8e6c9; }
+        .btn:active { transform: scale(0.98); opacity: 0.9; }
         
-        .upload-hint { text-align: center; font-size: 12px; color: #00b900; margin-bottom: 8px; cursor: pointer; font-weight: bold; }
+        .upload-hint { text-align: center; font-size: 12px; color: #00b900; margin-bottom: 8px; cursor: pointer; }
         #status { text-align: center; font-size: 11px; color: #999; margin-top: 8px; }
     </style>
 </head>
@@ -43,33 +45,25 @@
 <div class="container">
     <div class="input-section">
         <div class="left-fields">
-            <label>收件人 (點擊設定格式)</label>
+            <label>收件人</label>
             <input type="text" id="targetName" placeholder="誰？" onfocus="setCurrentField('targetName')" oninput="updatePreviewText()">
-            <label>祝福語 (點擊設定格式)</label>
+            <label>祝福語</label>
             <textarea id="message" rows="2" placeholder="想說的話..." onfocus="setCurrentField('message')" oninput="updatePreviewText()"></textarea>
         </div>
         <div class="right-format">
-            <div id="format-title" style="font-size: 10px; color: #00b900; font-weight: bold; margin-bottom: 5px;">編輯中: 收件人</div>
-            <label>文字大小</label>
+            <div id="format-title" style="font-size: 10px; color: #00b900; font-weight: bold; margin-bottom: 5px;">格式編輯</div>
+            <label>大小</label>
             <select id="fontSize" onchange="applyFormat()">
-                <option value="xs">極小</option>
-                <option value="sm">小</option>
-                <option value="md" selected>中</option>
-                <option value="lg">大</option>
-                <option value="xl">特大</option>
+                <option value="xs">極小</option><option value="sm">小</option><option value="md" selected>中</option><option value="lg">大</option><option value="xl">特大</option>
             </select>
-            <label>文字顏色</label>
+            <label>顏色</label>
             <select id="fontColor" onchange="applyFormat()">
-                <option value="#333333">黑色</option>
-                <option value="#00b900">綠色</option>
-                <option value="#ff4b4b">紅色</option>
-                <option value="#4b77ff">藍色</option>
-                <option value="#8e44ad">紫色</option>
+                <option value="#333333">黑色</option><option value="#00b900">綠色</option><option value="#ff4b4b">紅色</option><option value="#4b77ff">藍色</option>
             </select>
         </div>
     </div>
 
-    <div class="upload-hint" onclick="document.getElementById('imageInput').click()">📷 上傳並調整背景照片</div>
+    <div id="upload-tool" class="upload-hint" onclick="document.getElementById('imageInput').click()">📷 更換背景照片</div>
     <input type="file" id="imageInput" accept="image/*" style="display:none" onchange="readURL(this)">
 
     <div class="editor-container">
@@ -81,7 +75,10 @@
         </div>
     </div>
 
-    <button id="sendBtn" class="btn btn-main" onclick="processAndSend()">分享自定義賀卡</button>
+    <div class="btn-group">
+        <button id="sendForward" class="btn btn-forward" onclick="sendFlex(false)">🚀 快速轉傳</button>
+        <button id="sendCustom" class="btn btn-custom" onclick="processAndSend()">更換照片製作</button>
+    </div>
     <div id="status">𓃥 載入中...</div>
 </div>
 
@@ -92,30 +89,41 @@
     
     let croppieInstance;
     let currentFocus = 'targetName';
-    let formats = {
-        targetName: { size: 'xl', color: '#333333' },
-        message: { size: 'md', color: '#333333' }
-    };
+    let currentImageUrl = 'https://res.cloudinary.com/dnwwaush7/image/upload/v1774012083/cdegpgigtlzghqnjoadb.jpg';
+    let formats = { targetName: { size: 'xl', color: '#333333' }, message: { size: 'md', color: '#333333' } };
 
     async function init() {
         try {
             await liff.init({ liffId: LIFF_ID });
             if (!liff.isLoggedIn()) liff.login();
-            document.getElementById('status').innerText = "𓃥 系統就緒";
             
+            // 解析網址參數 (轉傳功能核心)
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.has('img')) {
+                currentImageUrl = urlParams.get('img');
+                document.getElementById('targetName').value = urlParams.get('to') || '';
+                document.getElementById('message').value = urlParams.get('msg') || '';
+                // 隱藏上傳按鈕，進入快速轉傳模式
+                document.getElementById('upload-tool').style.display = 'none';
+                document.getElementById('status').innerText = "𓃥 快速轉傳模式：沿用原圖";
+            } else {
+                document.getElementById('status').innerText = "𓃥 全新製作模式";
+            }
+
             croppieInstance = new Croppie(document.getElementById('upload-demo'), {
                 viewport: { width: 300, height: 195, type: 'square' },
                 boundary: { width: '100%', height: 260 },
-                showZoomer: false
+                showZoomer: !urlParams.has('img'), // 轉傳模式關閉縮放器
+                mouseWheelZoom: !urlParams.has('img')
             });
-            croppieInstance.bind({ url: 'https://res.cloudinary.com/dnwwaush7/image/upload/v1774012083/cdegpgigtlzghqnjoadb.jpg' });
+            croppieInstance.bind({ url: currentImageUrl });
             updatePreviewText();
         } catch (err) { alert(err.message); }
     }
 
     function setCurrentField(fieldId) {
         currentFocus = fieldId;
-        document.getElementById('format-title').innerText = "編輯中: " + (fieldId === 'targetName' ? '收件人' : '祝福語');
+        document.getElementById('format-title').innerText = "編輯: " + (fieldId === 'targetName' ? '收件人' : '祝福語');
         document.getElementById('fontSize').value = formats[fieldId].size;
         document.getElementById('fontColor').value = formats[fieldId].color;
     }
@@ -137,9 +145,7 @@
         pMsg.style.fontSize = getPx(formats.message.size);
     }
 
-    function getPx(s) {
-        return { xs: '11px', sm: '13px', md: '16px', lg: '20px', xl: '24px' }[s];
-    }
+    function getPx(s) { return { xs: '11px', sm: '13px', md: '16px', lg: '20px', xl: '24px' }[s]; }
 
     function readURL(input) {
         if (input.files && input.files[0]) {
@@ -150,50 +156,47 @@
     }
 
     async function processAndSend() {
-        const btn = document.getElementById('sendBtn');
-        btn.disabled = true;
-        document.getElementById('status').innerText = "正在裁切上傳...";
-        try {
-            const blob = await croppieInstance.result({ type: 'blob', size: { width: 800 }, format: 'jpeg', quality: 0.8 });
-            const formData = new FormData();
-            formData.append('file', blob);
-            formData.append('upload_preset', UPLOAD_PRESET);
-            const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`, { method: 'POST', body: formData });
-            const data = await res.json();
-            if (data.secure_url) sendFlex(data.secure_url);
-        } catch (err) { alert(err.message); btn.disabled = false; }
+        document.getElementById('status').innerText = "上傳照片中...";
+        const blob = await croppieInstance.result({ type: 'blob', size: { width: 800 }, format: 'jpeg', quality: 0.8 });
+        const formData = new FormData();
+        formData.append('file', blob);
+        formData.append('upload_preset', UPLOAD_PRESET);
+        const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`, { method: 'POST', body: formData });
+        const data = await res.json();
+        if (data.secure_url) sendFlex(data.secure_url);
     }
 
     async function sendFlex(imageUrl) {
+        const to = document.getElementById('targetName').value || '好友';
+        const msg = document.getElementById('message').value || '祝你有個美好的一天！';
+        const img = imageUrl || currentImageUrl;
+        
+        // 建立轉傳連結，把目前的資訊封裝進網址
+        const forwardUrl = `https://liff.line.me/${LIFF_ID}?img=${encodeURIComponent(img)}&to=${encodeURIComponent(to)}&msg=${encodeURIComponent(msg)}`;
+
         try {
             await liff.shareTargetPicker([{
                 "type": "flex",
                 "altText": "𓃥 您收到一份來自白六的賀卡！",
                 "contents": {
                     "type": "bubble",
-                    "hero": { "type": "image", "url": imageUrl, "size": "full", "aspectRatio": "20:13", "aspectMode": "cover" },
+                    "hero": { "type": "image", "url": img, "size": "full", "aspectRatio": "20:13", "aspectMode": "cover" },
                     "body": {
                         "type": "box", "layout": "vertical", "contents": [
                             { "type": "text", "text": "𓃥 白六賀卡", "weight": "bold", "color": "#00b900", "size": "xs" },
-                            { 
-                                "type": "text", "text": "To: " + (document.getElementById('targetName').value || '好友'), 
-                                "weight": "bold", "size": formats.targetName.size, "color": formats.targetName.color, "margin": "sm" 
-                            },
-                            { 
-                                "type": "text", "text": document.getElementById('message').value || '祝你有個美好的一天！', 
-                                "wrap": true, "margin": "lg", "size": formats.message.size, "color": formats.message.color 
-                            }
+                            { "type": "text", "text": "To: " + to, "weight": "bold", "size": formats.targetName.size, "color": formats.targetName.color, "margin": "sm" },
+                            { "type": "text", "text": msg, "wrap": true, "margin": "lg", "size": formats.message.size, "color": formats.message.color }
                         ]
                     },
                     "footer": {
                         "type": "box", "layout": "vertical", "contents": [
-                            { "type": "button", "style": "primary", "color": "#00b900", "action": { "type": "uri", "label": "我也要製作", "uri": "https://liff.line.me/" + LIFF_ID } }
+                            { "type": "button", "style": "primary", "color": "#00b900", "action": { "type": "uri", "label": "我也要轉傳/製作", "uri": forwardUrl } }
                         ]
                     }
                 }
             }]);
             liff.closeWindow();
-        } catch (e) { alert("失敗"); document.getElementById('sendBtn').disabled = false; }
+        } catch (e) { alert("傳送失敗"); }
     }
 
     init();
