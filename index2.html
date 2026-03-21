@@ -11,76 +11,72 @@
         body { font-family: -apple-system, "Noto Sans TC", sans-serif; background-color: #f8f9fa; margin: 0; padding: 10px; padding-bottom: 100px; }
         .container { max-width: 500px; margin: 0 auto; background: white; padding: 15px; border-radius: 24px; box-shadow: 0 10px 30px rgba(0,0,0,0.08); }
         
-        /* 標題與標籤 */
-        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
-        .mode-tag { font-size: 11px; font-weight: bold; padding: 5px 12px; border-radius: 20px; }
+        /* 編輯區域 */
+        .edit-fields { display: flex; gap: 10px; margin-bottom: 12px; }
+        .field-main { flex: 2; }
+        .field-style { flex: 1.2; background: #f1f8f1; padding: 8px; border-radius: 12px; border: 1px solid #e2eee2; }
+        label { font-size: 11px; color: #888; font-weight: bold; display: block; margin-bottom: 4px; }
+        input, textarea, select { width: 100%; padding: 6px; border: 1px solid #eee; border-radius: 8px; font-size: 14px; box-sizing: border-box; margin-bottom: 8px; outline: none; }
 
-        /* 內容輸入 */
-        .input-box { background: #fdfdfd; border: 1px solid #eee; padding: 12px; border-radius: 16px; margin-bottom: 15px; }
-        label { font-size: 11px; color: #aaa; font-weight: bold; margin-bottom: 4px; display: block; }
-        input, textarea { width: 100%; border: none; background: transparent; font-size: 16px; outline: none; padding: 5px 0; border-bottom: 1px solid #f0f0f0; margin-bottom: 10px; }
-        input:focus { border-bottom-color: #00b900; }
-
-        /* 裁切與預覽 */
-        .preview-wrap { position: relative; border-radius: 18px; overflow: hidden; border: 3px solid #00b900; aspect-ratio: 20/13; background: #000; }
+        /* 預覽與裁切 */
+        .preview-container { margin: 10px 0; border: 3px solid #00b900; border-radius: 20px; overflow: hidden; position: relative; background: #000; aspect-ratio: 20/13; }
         #croppie-el { width: 100%; height: 100%; }
-        #locked-img { width: 100%; height: 100%; object-fit: cover; display: none; }
+        #static-img { width: 100%; height: 100%; object-fit: cover; display: none; }
         
-        .overlay-text { position: absolute; bottom: 12%; left: 15px; right: 15px; pointer-events: none; z-index: 10; text-shadow: 0 2px 6px rgba(255,255,255,0.9); }
-        #p-name { display: block; font-weight: bold; line-height: 1.2; font-size: 24px; color: #333; }
-        #p-msg { display: block; line-height: 1.4; margin-top: 4px; font-size: 16px; color: #333; }
-
-        /* 分頁縮圖管理 */
-        .album-nav { margin-top: 15px; }
-        .thumb-scroll { display: flex; gap: 10px; overflow-x: auto; padding: 5px 0; scrollbar-width: none; }
-        .thumb-scroll::-webkit-scrollbar { display: none; }
-        .t-item { width: 65px; height: 45px; border-radius: 8px; border: 2px solid #eee; object-fit: cover; flex-shrink: 0; transition: 0.2s; }
-        .t-item.active { border-color: #00b900; transform: translateY(-3px); box-shadow: 0 4px 8px rgba(0,185,0,0.2); }
-        .t-add { width: 65px; height: 45px; border-radius: 8px; border: 2px dashed #ccc; display: flex; align-items: center; justify-content: center; color: #999; font-size: 20px; flex-shrink: 0; background: #fff; }
+        .text-overlay { position: absolute; bottom: 12%; left: 20px; right: 20px; pointer-events: none; z-index: 10; text-shadow: 0 2px 5px rgba(255,255,255,0.9); line-height: 1.3; }
+        
+        /* 縮圖管理 */
+        .thumb-list { display: flex; gap: 10px; overflow-x: auto; padding: 10px 0; scrollbar-width: none; }
+        .thumb-item { width: 70px; height: 46px; border-radius: 8px; border: 2px solid #eee; object-fit: cover; cursor: pointer; flex-shrink: 0; transition: 0.2s; }
+        .thumb-item.active { border-color: #00b900; transform: scale(1.05); }
+        .thumb-add { width: 70px; height: 46px; border-radius: 8px; border: 2px dashed #ccc; display: flex; align-items: center; justify-content: center; color: #aaa; font-size: 24px; cursor: pointer; flex-shrink: 0; }
 
         /* 底部按鈕 */
-        .footer { position: fixed; bottom: 0; left: 0; right: 0; background: white; padding: 15px 20px; box-shadow: 0 -5px 15px rgba(0,0,0,0.05); display: flex; flex-direction: column; align-items: center; z-index: 100; }
-        .send-btn { width: 100%; max-width: 400px; background: #00b900; color: white; border: none; padding: 16px; border-radius: 16px; font-size: 18px; font-weight: bold; cursor: pointer; }
-        .send-btn:disabled { background: #ccc; }
-        #status-msg { font-size: 10px; color: #bbb; margin-top: 8px; }
+        .footer { position: fixed; bottom: 0; left: 0; right: 0; background: rgba(255,255,255,0.95); padding: 15px 20px; box-shadow: 0 -5px 20px rgba(0,0,0,0.05); display: flex; flex-direction: column; align-items: center; }
+        .btn-main { width: 100%; max-width: 400px; background: #00b900; color: white; padding: 16px; border: none; border-radius: 16px; font-size: 18px; font-weight: bold; cursor: pointer; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <div class="header">
-        <span style="font-weight: bold; color: #00b900; font-size: 18px;">𓃥 白六賀卡·超</span>
-        <span id="mode-label" class="mode-tag">載入中...</span>
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+        <span style="font-weight:bold; color:#00b900;">𓃥 白六賀卡·超</span>
+        <span id="mode-tag" style="font-size:10px; padding:3px 8px; border-radius:10px;"></span>
     </div>
 
-    <div class="input-box">
-        <label>收件人 (To)</label>
-        <input type="text" id="in-to" placeholder="請輸入收件人姓名" oninput="syncToAll()">
-        <label>祝福內容 (Message)</label>
-        <textarea id="in-msg" rows="2" placeholder="請輸入您的祝福..." oninput="syncToAll()"></textarea>
+    <div class="edit-fields">
+        <div class="field-main">
+            <label>收件人 (To)</label>
+            <input type="text" id="in-to" placeholder="名字..." oninput="handleInput('to')">
+            <label>祝福語 (Message)</label>
+            <textarea id="in-msg" rows="2" placeholder="想說的話..." oninput="handleInput('msg')"></textarea>
+        </div>
+        <div class="field-style">
+            <label>字體大小</label>
+            <select id="in-ts" onchange="handleInput('ts')"><option value="md">中</option><option value="lg">大</option><option value="xl" selected>特大</option></select>
+            <label>顏色</label>
+            <input type="color" id="in-tc" value="#333333" style="height:30px; padding:0;" onchange="handleInput('tc')">
+        </div>
     </div>
 
-    <div class="preview-wrap">
+    <div class="preview-container">
         <div id="croppie-el"></div>
-        <img id="locked-img">
-        <div class="overlay-text">
-            <span id="p-name">To: 朋友</span>
-            <span id="p-msg">祝你有個美好的一天！</span>
+        <img id="static-img">
+        <div class="text-overlay">
+            <span id="p-to" style="display:block; font-weight:bold;">To: 朋友</span>
+            <span id="p-msg" style="display:block;">祝你有個美好的一天！</span>
         </div>
     </div>
 
-    <div class="album-nav">
-        <label id="album-count">賀卡組合 (0/10)</label>
-        <div class="thumb-scroll" id="thumb-container">
-            <div class="t-add" id="btn-add" onclick="document.getElementById('file-f').click()">+</div>
-        </div>
-        <input type="file" id="file-f" hidden accept="image/*" onchange="handleNewPhoto(this)">
+    <div class="thumb-list" id="thumb-wrap">
+        <div class="thumb-add" id="add-btn" onclick="document.getElementById('file-f').click()">+</div>
+        <input type="file" id="file-f" hidden accept="image/*" onchange="addPhoto(this)">
     </div>
 </div>
 
 <div class="footer">
-    <button id="mainBtn" class="send-btn" onclick="processAndSend()">🚀 預覽並批次傳送</button>
-    <div id="status-msg">𓃥 系統就緒</div>
+    <button id="sendBtn" class="btn-main" onclick="startBatchSend()">🚀 批次傳送 Carousel</button>
+    <div id="status" style="font-size:10px; color:#999; margin-top:8px;">𓃥 準備就緒</div>
 </div>
 
 <script>
@@ -88,157 +84,167 @@
     const CLOUD_NAME = 'dnwwaush7';
     const UPLOAD_PRESET = 'ml_default';
     
-    let croppieApi;
+    let croppie;
     let isForward = false;
-    let albumSet = []; 
+    let cardSet = []; 
     let activeIdx = 0;
-
-    const defaultImg = 'https://res.cloudinary.com/dnwwaush7/image/upload/v1774012083/cdegpgigtlzghqnjoadb.jpg';
 
     async function init() {
         await liff.init({ liffId: LIFF_ID });
-        if (!liff.isLoggedIn()) liff.login();
-
         const params = new URLSearchParams(window.location.search);
-        const tag = document.getElementById('mode-label');
-
+        
         if (params.has('data')) {
             isForward = true;
-            tag.innerText = "快速轉傳"; tag.style.background = "#fff3e0"; tag.style.color = "#ef6c00";
+            document.getElementById('mode-tag').innerText = "快速轉傳模式";
+            document.getElementById('mode-tag').style.background = "#fff3e0";
             document.getElementById('croppie-el').style.display = 'none';
-            document.getElementById('locked-img').style.display = 'block';
-            albumSet = JSON.parse(decodeURIComponent(params.get('data')));
+            document.getElementById('static-img').style.display = 'block';
+            cardSet = JSON.parse(decodeURIComponent(params.get('data')));
         } else {
             isForward = false;
-            tag.innerText = "全新製作"; tag.style.background = "#e3f2fd"; tag.style.color = "#1976d2";
-            croppieApi = new Croppie(document.getElementById('croppie-el'), {
+            document.getElementById('mode-tag').innerText = "全新製作模式";
+            document.getElementById('mode-tag').style.background = "#e3f2fd";
+            croppie = new Croppie(document.getElementById('croppie-el'), {
                 viewport: { width: 300, height: 195, type: 'square' },
                 boundary: { width: '100%', height: '100%' },
                 showZoomer: false
             });
-            albumSet = [{ img: defaultImg, to: '', msg: '' }];
+            cardSet = [{ img: 'https://res.cloudinary.com/dnwwaush7/image/upload/v1774012083/cdegpgigtlzghqnjoadb.jpg', to: '', msg: '', ts: 'xl', tc: '#333333', ms: 'md', mc: '#333333' }];
         }
-        
-        refreshThumbs();
-        loadActiveCard();
+        renderThumbs();
+        loadCard(0);
     }
 
-    function refreshThumbs() {
-        const cont = document.getElementById('thumb-container');
-        cont.querySelectorAll('.t-item').forEach(el => el.remove());
-        albumSet.forEach((item, i) => {
+    function renderThumbs() {
+        const wrap = document.getElementById('thumb-wrap');
+        wrap.querySelectorAll('.thumb-item').forEach(e => e.remove());
+        cardSet.forEach((c, i) => {
             const img = document.createElement('img');
-            img.className = `t-item ${i === activeIdx ? 'active' : ''}`;
-            img.src = item.img;
-            img.onclick = () => switchActive(i);
-            cont.insertBefore(img, document.getElementById('btn-add'));
+            img.className = `thumb-item ${i === activeIdx ? 'active' : ''}`;
+            img.src = c.img;
+            img.onclick = () => switchCard(i);
+            wrap.insertBefore(img, document.getElementById('add-btn'));
         });
-        document.getElementById('btn-add').style.display = (isForward || albumSet.length >= 10) ? 'none' : 'flex';
-        document.getElementById('album-count').innerText = `賀卡組合 (${albumSet.length}/10)`;
+        document.getElementById('add-btn').style.display = (isForward || cardSet.length >= 10) ? 'none' : 'flex';
     }
 
-    async function switchActive(i) {
-        if (!isForward && croppieApi) {
-            const blob = await croppieApi.result({ type: 'blob', size: { width: 800 }, format: 'jpeg' });
-            albumSet[activeIdx].blob = blob;
-            albumSet[activeIdx].img = URL.createObjectURL(blob);
+    async function switchCard(i) {
+        if (!isForward) {
+            const blob = await croppie.result({ type: 'blob', size: { width: 800 }, format: 'jpeg' });
+            cardSet[activeIdx].blob = blob;
+            cardSet[activeIdx].img = URL.createObjectURL(blob);
         }
         activeIdx = i;
-        refreshThumbs();
-        loadActiveCard();
+        renderThumbs();
+        loadCard(i);
     }
 
-    function loadActiveCard() {
-        const data = albumSet[activeIdx];
-        document.getElementById('in-to').value = data.to;
-        document.getElementById('in-msg').value = data.msg;
+    function loadCard(i) {
+        const c = cardSet[i];
+        document.getElementById('in-to').value = c.to;
+        document.getElementById('in-msg').value = c.msg;
+        document.getElementById('in-ts').value = c.ts;
+        document.getElementById('in-tc').value = c.tc;
         if (isForward) {
-            document.getElementById('locked-img').src = data.img;
+            document.getElementById('static-img').src = c.img;
         } else {
-            croppieApi.bind({ url: data.img });
+            croppie.bind({ url: c.img });
         }
         updatePreview();
     }
 
-    function syncToAll() {
-        const toVal = document.getElementById('in-to').value;
-        const msgVal = document.getElementById('in-msg').value;
-        albumSet.forEach(item => {
-            item.to = toVal;
-            item.msg = msgVal;
-        });
+    function handleInput(field) {
+        const val = document.getElementById(`in-${field}`).value;
+        cardSet[activeIdx][field] = val;
+
+        // 第一張連動邏輯
+        if (activeIdx === 0 && (field === 'to' || field === 'msg' || field === 'tc')) {
+            for (let j = 1; j < cardSet.length; j++) {
+                if (cardSet[j][field] === "" || cardSet[j][field] === val.slice(0,-1) || cardSet[j].isSynced !== false) {
+                    cardSet[j][field] = val;
+                    cardSet[j].isSynced = true;
+                }
+            }
+        } else if (activeIdx !== 0) {
+            cardSet[activeIdx].isSynced = false;
+        }
         updatePreview();
     }
 
     function updatePreview() {
-        document.getElementById('p-name').innerText = "To: " + (albumSet[activeIdx].to || "朋友");
-        document.getElementById('p-msg').innerText = albumSet[activeIdx].msg || "祝你有個美好的一天！";
+        const c = cardSet[activeIdx];
+        const t = document.getElementById('p-to');
+        const m = document.getElementById('p-msg');
+        t.innerText = "To: " + (c.to || "朋友");
+        t.style.color = c.tc;
+        t.style.fontSize = { md:'16px', lg:'20px', xl:'24px' }[c.ts];
+        m.innerText = c.msg || "祝你有個美好的一天！";
+        m.style.color = c.tc; // 賀詞同步顏色
     }
 
-    function handleNewPhoto(input) {
+    function addPhoto(input) {
         if (input.files && input.files[0]) {
             const reader = new FileReader();
             reader.onload = e => {
-                albumSet.push({ img: e.target.result, to: albumSet[0].to, msg: albumSet[0].msg });
-                switchActive(albumSet.length - 1);
+                cardSet.push({ 
+                    img: e.target.result, to: cardSet[0].to, msg: cardSet[0].msg, 
+                    ts: cardSet[0].ts, tc: cardSet[0].tc, ms: 'md', mc: cardSet[0].tc 
+                });
+                switchCard(cardSet.length - 1);
             };
             reader.readAsDataURL(input.files[0]);
         }
     }
 
-    async function processAndSend() {
-        const btn = document.getElementById('mainBtn');
+    async function startBatchSend() {
+        const btn = document.getElementById('sendBtn');
         btn.disabled = true;
-        document.getElementById('status-msg').innerText = "🚀 正在處理批次照片中...";
+        document.getElementById('status').innerText = "🚀 批次處理中...";
 
         try {
             if (!isForward) {
-                const finalBlob = await croppieApi.result({ type: 'blob', size: { width: 800 }, format: 'jpeg' });
-                albumSet[activeIdx].blob = finalBlob;
+                const lastBlob = await croppie.result({ type: 'blob', size: { width: 800 }, format: 'jpeg' });
+                cardSet[activeIdx].blob = lastBlob;
 
-                const uploads = albumSet.map(async (item) => {
+                for (let i = 0; i < cardSet.length; i++) {
                     const fd = new FormData();
-                    fd.append('file', item.blob || item.img);
+                    fd.append('file', cardSet[i].blob || cardSet[i].img);
                     fd.append('upload_preset', UPLOAD_PRESET);
                     const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`, { method: 'POST', body: fd });
                     const d = await res.json();
-                    item.img = d.secure_url;
-                    delete item.blob;
-                });
-                await Promise.all(uploads);
+                    cardSet[i].img = d.secure_url;
+                }
             }
 
-            const dataStr = encodeURIComponent(JSON.stringify(albumSet));
-            const forwardUrl = `https://liff.line.me/${LIFF_ID}?data=${dataStr}`;
-            const resetUrl = `https://liff.line.me/${LIFF_ID}`;
+            const dataStr = encodeURIComponent(JSON.stringify(cardSet.map(c => ({ img:c.img, to:c.to, msg:c.msg, ts:c.ts, tc:c.tc }))));
+            const shareUrl = `https://liff.line.me/${LIFF_ID}?data=${dataStr}`;
 
-            const bubbles = albumSet.map((item, idx) => ({
+            const bubbles = cardSet.map((c, i) => ({
                 "type": "bubble",
-                "hero": { "type": "image", "url": item.img, "size": "full", "aspectRatio": "20:13", "aspectMode": "cover" },
+                "size": "mega", // 讓卡片盡量佔滿寬度
+                "hero": { "type": "image", "url": c.img, "size": "full", "aspectRatio": "20:13", "aspectMode": "cover" },
                 "body": {
                     "type": "box", "layout": "vertical", "contents": [
-                        { "type": "text", "text": `𓃥 白六賀卡·超 (${idx + 1}/${albumSet.length})`, "weight": "bold", "color": "#00b900", "size": "xs" },
-                        { "type": "text", "text": "To: " + (item.to || "朋友"), "weight": "bold", "size": "xl", "margin": "md" },
-                        { "type": "text", "text": item.msg || "祝你有個美好的一天！", "wrap": true, "margin": "sm", "size": "md", "color": "#333333" }
+                        { "type": "text", "text": `𓃥 白六賀卡·超 (${i+1}/${cardSet.length})`, "weight": "bold", "color": "#00b900", "size": "xs" },
+                        { "type": "text", "text": "To: " + (c.to || "朋友"), "weight": "bold", "size": c.ts, "color": c.tc, "margin": "md" },
+                        { "type": "text", "text": c.msg || "祝你有個美好的一天！", "wrap": true, "margin": "sm", "size": "md", "color": c.tc }
                     ]
                 },
                 "footer": {
                     "type": "box", "layout": "horizontal", "spacing": "sm", "contents": [
-                        { "type": "button", "style": "primary", "color": "#00b900", "height": "sm", "action": { "type": "uri", "label": "快速轉傳", "uri": forwardUrl } },
-                        { "type": "button", "style": "secondary", "color": "#eeeeee", "height": "sm", "action": { "type": "uri", "label": "重新製作", "uri": resetUrl } }
+                        { "type": "button", "style": "primary", "color": "#00b900", "height": "sm", "action": { "type": "uri", "label": "快速轉傳", "uri": shareUrl } },
+                        { "type": "button", "style": "secondary", "color": "#eeeeee", "height": "sm", "action": { "type": "uri", "label": "重新製作", "uri": `https://liff.line.me/${LIFF_ID}` } }
                     ]
                 }
             }));
 
             await liff.shareTargetPicker([{
                 "type": "flex",
-                "altText": `𓃥 您收到來自白六賀卡·超的驚喜組合！`,
+                "altText": "𓃥 收到一份白六賀卡·超驚喜組合！",
                 "contents": { "type": "carousel", "contents": bubbles }
             }]);
             liff.closeWindow();
-        } catch (e) {
-            alert("處理失敗，請稍後再試"); btn.disabled = false;
-        }
+        } catch (e) { alert("失敗"); btn.disabled = false; }
     }
 
     init();
