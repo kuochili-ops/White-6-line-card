@@ -11,25 +11,23 @@
         body { font-family: -apple-system, sans-serif; background-color: #f4f4f4; padding: 10px; margin: 0; }
         .container { max-width: 450px; margin: 0 auto; background: white; padding: 15px; border-radius: 20px; box-shadow: 0 5px 20px rgba(0,0,0,0.1); }
         
-        /* 緊湊欄位配置 */
         .input-section { display: flex; gap: 10px; margin-bottom: 10px; }
         .left-fields { flex: 2; }
         .right-format { flex: 1.2; background: #f0f9f0; padding: 8px; border-radius: 10px; border: 1px solid #d0e8d0; }
         
         label { font-size: 11px; color: #888; font-weight: bold; margin-bottom: 3px; display: block; }
-        input, textarea, select { width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; box-sizing: border-box; margin-bottom: 8px; transition: 0.3s; }
-        input:focus, textarea:focus { border-color: #00b900; background: #fff; outline: none; box-shadow: 0 0 5px rgba(0,185,0,0.2); }
+        input, textarea, select { width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; box-sizing: border-box; margin-bottom: 8px; }
+        input:focus, textarea:focus { border-color: #00b900; outline: none; background: #fff; }
         
-        /* 編輯預覽區 */
         .editor-container { margin: 10px 0; border: 2px solid #00b900; border-radius: 15px; overflow: hidden; position: relative; background: #eee; }
         #upload-demo { width: 100%; height: 260px; }
         
-        /* 覆蓋在照片上的文字預覽層 */
         .text-overlay {
-            position: absolute; bottom: 40px; left: 20px; right: 20px;
-            pointer-events: none; z-index: 10; text-shadow: 0 1px 3px rgba(255,255,255,0.8);
+            position: absolute; bottom: 35px; left: 20px; right: 20px;
+            pointer-events: none; z-index: 10; text-shadow: 0 1px 4px rgba(255,255,255,0.8);
         }
-        #p-name { font-weight: bold; font-size: 18px; display: block; margin-bottom: 5px; }
+        #p-brand { font-size: 10px; color: #00b900; font-weight: bold; display: block; margin-bottom: 2px; }
+        #p-name { font-weight: bold; display: block; margin-bottom: 5px; }
         #p-msg { line-height: 1.4; display: block; }
 
         .btn { width: 100%; padding: 14px; border: none; border-radius: 12px; font-size: 16px; font-weight: bold; cursor: pointer; }
@@ -45,15 +43,16 @@
 <div class="container">
     <div class="input-section">
         <div class="left-fields">
-            <label id="lbl-target">收件人 (點擊以設定格式)</label>
+            <label>收件人 (點擊設定格式)</label>
             <input type="text" id="targetName" placeholder="誰？" onfocus="setCurrentField('targetName')" oninput="updatePreviewText()">
-            <label id="lbl-message">祝福語 (點擊以設定格式)</label>
+            <label>祝福語 (點擊設定格式)</label>
             <textarea id="message" rows="2" placeholder="想說的話..." onfocus="setCurrentField('message')" oninput="updatePreviewText()"></textarea>
         </div>
         <div class="right-format">
-            <div id="format-title" style="font-size: 10px; color: #00b900; font-weight: bold; margin-bottom: 5px;">編輯中: 無</div>
+            <div id="format-title" style="font-size: 10px; color: #00b900; font-weight: bold; margin-bottom: 5px;">編輯中: 收件人</div>
             <label>文字大小</label>
             <select id="fontSize" onchange="applyFormat()">
+                <option value="xs">極小</option>
                 <option value="sm">小</option>
                 <option value="md" selected>中</option>
                 <option value="lg">大</option>
@@ -65,17 +64,18 @@
                 <option value="#00b900">綠色</option>
                 <option value="#ff4b4b">紅色</option>
                 <option value="#4b77ff">藍色</option>
-                <option value="#f39c12">溫暖橘</option>
+                <option value="#8e44ad">紫色</option>
             </select>
         </div>
     </div>
 
-    <div class="upload-hint" onclick="document.getElementById('imageInput').click()">📷 上傳並裁切背景照片</div>
+    <div class="upload-hint" onclick="document.getElementById('imageInput').click()">📷 上傳並調整背景照片</div>
     <input type="file" id="imageInput" accept="image/*" style="display:none" onchange="readURL(this)">
 
     <div class="editor-container">
         <div id="upload-demo"></div>
         <div class="text-overlay">
+            <span id="p-brand">𓃥 白六賀卡</span>
             <span id="p-name">To: 好友</span>
             <span id="p-msg">祝你有個美好的一天！</span>
         </div>
@@ -91,9 +91,7 @@
     const UPLOAD_PRESET = 'ml_default';
     
     let croppieInstance;
-    let currentFocus = 'targetName'; // 預設聚焦收件人
-    
-    // 各欄位獨立的格式設定
+    let currentFocus = 'targetName';
     let formats = {
         targetName: { size: 'xl', color: '#333333' },
         message: { size: 'md', color: '#333333' }
@@ -103,7 +101,7 @@
         try {
             await liff.init({ liffId: LIFF_ID });
             if (!liff.isLoggedIn()) liff.login();
-            document.getElementById('status').innerText = "𓃥 準備就緒";
+            document.getElementById('status').innerText = "𓃥 系統就緒";
             
             croppieInstance = new Croppie(document.getElementById('upload-demo'), {
                 viewport: { width: 300, height: 195, type: 'square' },
@@ -115,44 +113,32 @@
         } catch (err) { alert(err.message); }
     }
 
-    // 當游標進入欄位
     function setCurrentField(fieldId) {
         currentFocus = fieldId;
-        const labelText = fieldId === 'targetName' ? '收件人' : '祝福語';
-        document.getElementById('format-title').innerText = "編輯中: " + labelText;
-        
-        // 同步右側選單的顯示值
+        document.getElementById('format-title').innerText = "編輯中: " + (fieldId === 'targetName' ? '收件人' : '祝福語');
         document.getElementById('fontSize').value = formats[fieldId].size;
         document.getElementById('fontColor').value = formats[fieldId].color;
     }
 
-    // 當調整右側格式選單
     function applyFormat() {
         formats[currentFocus].size = document.getElementById('fontSize').value;
         formats[currentFocus].color = document.getElementById('fontColor').value;
         updatePreviewText();
     }
 
-    // 更新下方照片上的文字預覽
     function updatePreviewText() {
-        const nameVal = document.getElementById('targetName').value || '好友';
-        const msgVal = document.getElementById('message').value || '祝你有個美好的一天！';
-        
         const pName = document.getElementById('p-name');
         const pMsg = document.getElementById('p-msg');
-
-        pName.innerText = "To: " + nameVal;
+        pName.innerText = "To: " + (document.getElementById('targetName').value || '好友');
         pName.style.color = formats.targetName.color;
-        pName.style.fontSize = getPixelSize(formats.targetName.size);
-
-        pMsg.innerText = msgVal;
+        pName.style.fontSize = getPx(formats.targetName.size);
+        pMsg.innerText = document.getElementById('message').value || '祝你有個美好的一天！';
         pMsg.style.color = formats.message.color;
-        pMsg.style.fontSize = getPixelSize(formats.message.size);
+        pMsg.style.fontSize = getPx(formats.message.size);
     }
 
-    function getPixelSize(liffSize) {
-        const map = { sm: '13px', md: '16px', lg: '20px', xl: '24px' };
-        return map[liffSize];
+    function getPx(s) {
+        return { xs: '11px', sm: '13px', md: '16px', lg: '20px', xl: '24px' }[s];
     }
 
     function readURL(input) {
@@ -166,17 +152,14 @@
     async function processAndSend() {
         const btn = document.getElementById('sendBtn');
         btn.disabled = true;
-        document.getElementById('status').innerText = "處理中...";
-
+        document.getElementById('status').innerText = "正在裁切上傳...";
         try {
             const blob = await croppieInstance.result({ type: 'blob', size: { width: 800 }, format: 'jpeg', quality: 0.8 });
             const formData = new FormData();
             formData.append('file', blob);
             formData.append('upload_preset', UPLOAD_PRESET);
-
             const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`, { method: 'POST', body: formData });
             const data = await res.json();
-            
             if (data.secure_url) sendFlex(data.secure_url);
         } catch (err) { alert(err.message); btn.disabled = false; }
     }
@@ -185,15 +168,16 @@
         try {
             await liff.shareTargetPicker([{
                 "type": "flex",
-                "altText": "您收到一份精製賀卡！",
+                "altText": "𓃥 您收到一份來自白六的賀卡！",
                 "contents": {
                     "type": "bubble",
                     "hero": { "type": "image", "url": imageUrl, "size": "full", "aspectRatio": "20:13", "aspectMode": "cover" },
                     "body": {
                         "type": "box", "layout": "vertical", "contents": [
+                            { "type": "text", "text": "𓃥 白六賀卡", "weight": "bold", "color": "#00b900", "size": "xs" },
                             { 
                                 "type": "text", "text": "To: " + (document.getElementById('targetName').value || '好友'), 
-                                "weight": "bold", "size": formats.targetName.size, "color": formats.targetName.color 
+                                "weight": "bold", "size": formats.targetName.size, "color": formats.targetName.color, "margin": "sm" 
                             },
                             { 
                                 "type": "text", "text": document.getElementById('message').value || '祝你有個美好的一天！', 
@@ -209,7 +193,7 @@
                 }
             }]);
             liff.closeWindow();
-        } catch (e) { alert("傳送失敗"); document.getElementById('sendBtn').disabled = false; }
+        } catch (e) { alert("失敗"); document.getElementById('sendBtn').disabled = false; }
     }
 
     init();
