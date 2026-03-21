@@ -6,121 +6,131 @@
     <title>𓃥 白六賀卡製作</title>
     <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background-color: #f0f2f5; padding: 15px; margin: 0; }
-        .card-tool { max-width: 450px; margin: 0 auto; background: white; padding: 20px; border-radius: 16px; box-shadow: 0 8px 24px rgba(0,0,0,0.1); }
-        h2 { color: #00b900; text-align: center; margin-top: 0; font-size: 22px; }
-        .input-group { margin-bottom: 15px; }
-        label { display: block; margin-bottom: 6px; font-weight: 600; font-size: 14px; color: #444; }
-        input, textarea, select { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 10px; box-sizing: border-box; font-size: 16px; }
-        textarea { resize: none; }
-        .btn { width: 100%; padding: 14px; border: none; border-radius: 10px; font-size: 16px; font-weight: bold; cursor: pointer; margin-top: 10px; transition: 0.3s; }
-        .btn-send { background-color: #00b900; color: white; }
-        .btn-share { background-color: #f8f9fa; color: #555; border: 1px solid #ddd; }
-        .preview-area { margin-top: 20px; padding: 15px; border: 2px dashed #00b900; border-radius: 12px; background-color: #f9fff9; }
-        .preview-img { width: 100%; height: 180px; object-fit: cover; border-radius: 8px; margin-bottom: 10px; }
-        #status { text-align: center; font-size: 12px; color: #999; margin-top: 10px; }
+        body { font-family: -apple-system, sans-serif; background-color: #f8f9fa; padding: 20px; margin: 0; }
+        .container { max-width: 400px; margin: 0 auto; background: white; padding: 20px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.08); }
+        h2 { color: #00b900; text-align: center; font-size: 20px; margin-bottom: 20px; }
+        .field { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; font-size: 14px; color: #666; }
+        input, textarea { width: 100%; padding: 12px; border: 1px solid #eee; border-radius: 12px; box-sizing: border-box; font-size: 16px; background: #fdfdfd; }
+        .preview-card { margin: 20px 0; border: 2px solid #00b900; border-radius: 15px; overflow: hidden; background: #fff; }
+        .preview-img { width: 100%; height: 180px; object-fit: cover; display: block; }
+        .preview-content { padding: 15px; }
+        .btn { width: 100%; padding: 15px; border: none; border-radius: 12px; font-size: 16px; font-weight: bold; cursor: pointer; transition: 0.2s; }
+        .btn-main { background-color: #00b900; color: white; margin-bottom: 10px; }
+        .btn-main:active { background-color: #009e00; transform: scale(0.98); }
+        .btn-sub { background-color: #f0f0f0; color: #666; font-size: 14px; }
+        #loading-mask { text-align: center; color: #999; font-size: 12px; margin-top: 10px; }
     </style>
 </head>
 <body>
 
-<div class="card-tool">
-    <h2>𓃥 白六賀卡製作器</h2>
+<div class="container">
+    <h2>𓃥 白六賀卡製作</h2>
     
-    <div class="input-group">
-        <label>收件人</label>
-        <input type="text" id="targetName" placeholder="想送給誰？" oninput="syncPreview()">
+    <div class="field">
+        <label>收件人姓名</label>
+        <input type="text" id="targetName" placeholder="輸入好友暱稱..." oninput="updateUI()">
     </div>
 
-    <div class="input-group">
-        <label>挑選背景</label>
-        <select id="theme" onchange="syncPreview()">
-            <option value="https://images.unsplash.com/photo-1513519245088-0e12902e5a38?w=800">簡約北歐風</option>
-            <option value="https://images.unsplash.com/photo-1530103043960-ef38714abb15?w=800">繽紛派對</option>
-            <option value="https://images.unsplash.com/photo-1496337589254-7e19d01ced44?w=800">星空感激</option>
-            <option value="https://images.unsplash.com/photo-1512909006721-3d6018887383?w=800">節慶暖意</option>
-        </select>
-    </div>
-
-    <div class="input-group">
+    <div class="field">
         <label>祝福語</label>
-        <textarea id="message" rows="3" placeholder="寫下你的祝福..." oninput="syncPreview()"></textarea>
+        <textarea id="message" rows="3" placeholder="想對他說什麼？" oninput="updateUI()"></textarea>
     </div>
 
-    <div class="preview-area">
-        <img id="previewImg" class="preview-img" src="https://images.unsplash.com/photo-1513519245088-0e12902e5a38?w=800">
-        <div style="font-size: 14px; color: #888;">預覽：</div>
-        <div id="previewText" style="font-weight: bold; margin-top: 5px;">To: 好友</div>
+    <div class="preview-card">
+        <img class="preview-img" src="https://res.cloudinary.com/dnwwaush7/image/upload/f_auto,q_auto,w_800/v1774012083/cdegpgigtlzghqnjoadb.jpg">
+        <div class="preview-content">
+            <div id="ui-name" style="font-weight: bold; font-size: 18px;">To: 好友</div>
+            <div id="ui-msg" style="color: #777; font-size: 14px; margin-top: 5px;">祝你有個美好的一天！</div>
+        </div>
     </div>
 
-    <button class="btn btn-send" onclick="sendFlexCard()">傳送賀卡給好友</button>
-    <button class="btn btn-share" onclick="shareApp()">分享此工具給朋友</button>
+    <button class="btn btn-main" onclick="sendGreeting()">傳送賀卡給好友</button>
+    <button class="btn btn-sub" onclick="shareApp()">推薦此工具給朋友</button>
     
-    <div id="status">LIFF 初始化中...</div>
+    <div id="loading-mask">系統初始化中...</div>
 </div>
 
 <script>
-    // 這裡替換成你的真實 LIFF ID
     const LIFF_ID = '2009222789-kAJm4sds'; 
+    const CARD_IMAGE = "https://res.cloudinary.com/dnwwaush7/image/upload/f_auto,q_auto,w_800/v1774012083/cdegpgigtlzghqnjoadb.jpg";
 
-    async function init() {
-        const statusDiv = document.getElementById('status');
+    async function initLIFF() {
         try {
             await liff.init({ liffId: LIFF_ID });
             if (!liff.isLoggedIn()) {
-                statusDiv.innerText = "正在導向登入...";
                 liff.login();
             } else {
-                statusDiv.innerText = "𓃥 系統就緒";
+                document.getElementById('loading-mask').innerText = "𓃥 已就緒 (已連線 LINE)";
             }
         } catch (err) {
-            statusDiv.innerText = "初始化失敗";
-            alert("LIFF 初始化錯誤: " + err.message);
+            alert("初始化失敗: " + err.message);
         }
     }
 
-    function syncPreview() {
-        const name = document.getElementById('targetName').value || '好友';
-        document.getElementById('previewImg').src = document.getElementById('theme').value;
-        document.getElementById('previewText').innerText = "To: " + name;
-    }
-
-    async function sendFlexCard() {
+    function updateUI() {
         const name = document.getElementById('targetName').value || '好友';
         const msg = document.getElementById('message').value || '祝你有個美好的一天！';
-        const img = document.getElementById('theme').value;
+        document.getElementById('ui-name').innerText = "To: " + name;
+        document.getElementById('ui-msg').innerText = msg;
+    }
 
-        // 核心檢查：後台開關
+    async function sendGreeting() {
+        const name = document.getElementById('targetName').value || '好友';
+        const msg = document.getElementById('message').value || '祝你有個美好的一天！';
+
         if (!liff.isApiAvailable('shareTargetPicker')) {
-            alert("⚠️ 錯誤：後台尚未開啟 'Share target picker' 功能，請檢查 LINE Developers 設定。");
+            alert("請至後台開啟 Share Target Picker 權限");
             return;
         }
 
-        const flexMessage = {
-            "type": "bubble",
-            "hero": { "type": "image", "url": img, "size": "full", "aspectRatio": "20:13", "aspectMode": "cover" },
-            "body": {
-                "type": "box", "layout": "vertical", "contents": [
-                    { "type": "text", "text": "𓃥 白六賀卡", "weight": "bold", "color": "#00b900", "size": "sm" },
-                    { "type": "text", "text": "To: " + name, "weight": "bold", "size": "xl", "margin": "md" },
-                    { "type": "text", "text": msg, "wrap": true, "margin": "lg", "color": "#444444", "size": "md" }
-                ]
-            },
-            "footer": {
-                "type": "box", "layout": "vertical", "contents": [
-                    { "type": "button", "style": "primary", "color": "#00b900", "action": { "type": "uri", "label": "我也要製作", "uri": "https://liff.line.me/" + 2009222789-kAJm4sds } }
-                ]
-            }
-        };
-
         try {
-            const res = await liff.shareTargetPicker([
-                { "type": "flex", "altText": "您收到一份來自好友的賀卡！", "contents": flexMessage }
+            const result = await liff.shareTargetPicker([
+                {
+                    "type": "flex",
+                    "altText": "您收到一份來自好友的賀卡！",
+                    "contents": {
+                        "type": "bubble",
+                        "hero": {
+                            "type": "image",
+                            "url": CARD_IMAGE,
+                            "size": "full",
+                            "aspectRatio": "20:13",
+                            "aspectMode": "cover"
+                        },
+                        "body": {
+                            "type": "box",
+                            "layout": "vertical",
+                            "contents": [
+                                { "type": "text", "text": "𓃥 白六賀卡", "weight": "bold", "color": "#00b900", "size": "sm" },
+                                { "type": "text", "text": "To: " + name, "weight": "bold", "size": "xl", "margin": "md" },
+                                { "type": "text", "text": msg, "wrap": true, "margin": "lg", "color": "#444444" }
+                            ]
+                        },
+                        "footer": {
+                            "type": "box",
+                            "layout": "vertical",
+                            "contents": [
+                                {
+                                    "type": "button",
+                                    "style": "primary",
+                                    "color": "#00b900",
+                                    "action": {
+                                        "type": "uri",
+                                        "label": "我也要製作",
+                                        "uri": "https://liff.line.me/" + LIFF_ID
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
             ]);
-            if (res) {
-                liff.closeWindow(); // 傳送成功後關閉視窗
+            if (result) {
+                liff.closeWindow();
             }
         } catch (error) {
-            alert("傳送失敗原因：" + error.message);
+            alert("傳送失敗：" + error.message);
         }
     }
 
@@ -128,18 +138,22 @@
         try {
             await liff.shareTargetPicker([{
                 "type": "flex",
-                "altText": "推薦一個有趣的賀卡製作器！",
+                "altText": "分享一個好用的賀卡製作器！",
                 "contents": {
                     "type": "bubble",
                     "body": {
-                        "type": "box", "layout": "vertical", "contents": [
+                        "type": "box",
+                        "layout": "vertical",
+                        "contents": [
                             { "type": "text", "text": "𓃥 白六賀卡製作器", "weight": "bold", "size": "lg" },
-                            { "type": "text", "text": "點擊下方按鈕，開始製作你的專屬 Flex 賀卡分享給好友吧！", "wrap": true, "size": "sm", "margin": "sm" }
+                            { "type": "text", "text": "快速製作精美 Flex Message 賀卡，快來試試！", "wrap": true, "size": "sm", "margin": "sm" }
                         ]
                     },
                     "footer": {
-                        "type": "box", "layout": "vertical", "contents": [
-                            { "type": "button", "style": "link", "action": { "type": "uri", "label": "立即嘗試", "uri": "https://liff.line.me/" + LIFF_ID } }
+                        "type": "box",
+                        "layout": "vertical",
+                        "contents": [
+                            { "type": "button", "style": "link", "action": { "type": "uri", "label": "立即開啟", "uri": "https://liff.line.me/" + LIFF_ID } }
                         ]
                     }
                 }
@@ -149,7 +163,7 @@
         }
     }
 
-    init();
+    initLIFF();
 </script>
 
 </body>
