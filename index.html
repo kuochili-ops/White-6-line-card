@@ -5,177 +5,191 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>𓃥 白六賀卡製作</title>
     <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/croppie/2.6.5/croppie.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/croppie/2.6.5/croppie.min.js"></script>
     <style>
-        body { font-family: -apple-system, sans-serif; background-color: #f8f9fa; padding: 15px; margin: 0; }
-        .container { max-width: 400px; margin: 0 auto; background: white; padding: 20px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.08); }
-        h2 { color: #00b900; text-align: center; font-size: 20px; margin-bottom: 20px; }
-        .field { margin-bottom: 12px; }
-        label { display: block; margin-bottom: 5px; font-weight: bold; font-size: 13px; color: #666; }
-        input, textarea { width: 100%; padding: 10px; border: 1px solid #eee; border-radius: 10px; box-sizing: border-box; font-size: 15px; background: #fdfdfd; }
+        body { font-family: -apple-system, sans-serif; background-color: #f4f4f4; padding: 10px; margin: 0; }
+        .container { max-width: 450px; margin: 0 auto; background: white; padding: 15px; border-radius: 20px; box-shadow: 0 5px 20px rgba(0,0,0,0.1); }
         
-        .upload-area { border: 1px dashed #00b900; padding: 15px; border-radius: 10px; text-align: center; background: #f9fff9; margin-bottom: 15px; }
-        .upload-btn { font-size: 14px; color: #00b900; cursor: pointer; font-weight: bold; }
-        #uploadStatus { font-size: 11px; color: #888; margin-top: 5px; }
-
-        .preview-card { margin: 15px 0; border: 2px solid #00b900; border-radius: 15px; overflow: hidden; background: #fff; }
-        .preview-img { width: 100%; height: 180px; object-fit: cover; display: block; }
-        .preview-content { padding: 15px; }
+        /* 緊湊欄位配置 */
+        .input-section { display: flex; gap: 10px; margin-bottom: 10px; align-items: flex-start; }
+        .left-fields { flex: 2; }
+        .right-format { flex: 1.2; background: #f9f9f9; padding: 8px; border-radius: 10px; border: 1px solid #eee; }
         
-        .btn { width: 100%; padding: 14px; border: none; border-radius: 12px; font-size: 16px; font-weight: bold; cursor: pointer; transition: 0.2s; }
-        .btn-main { background-color: #00b900; color: white; margin-bottom: 10px; }
+        label { font-size: 11px; color: #888; font-weight: bold; margin-bottom: 3px; display: block; }
+        input, textarea, select { width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; box-sizing: border-box; margin-bottom: 8px; }
+        
+        /* 編輯器容器 */
+        .editor-container { margin: 10px 0; border: 2px solid #00b900; border-radius: 15px; overflow: hidden; position: relative; }
+        #upload-demo { width: 100%; height: 250px; }
+        
+        .btn { width: 100%; padding: 14px; border: none; border-radius: 12px; font-size: 16px; font-weight: bold; cursor: pointer; }
+        .btn-main { background-color: #00b900; color: white; margin-top: 10px; }
         .btn-main:disabled { background-color: #ccc; }
-        #loading-mask { text-align: center; color: #999; font-size: 11px; margin-top: 10px; }
+        
+        #status { text-align: center; font-size: 11px; color: #999; margin-top: 8px; }
+        .upload-hint { text-align: center; font-size: 12px; color: #00b900; margin-bottom: 5px; cursor: pointer; text-decoration: underline; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h2>𓃥 白六賀卡製作</h2>
-    
-    <div class="field">
-        <label>收件人姓名</label>
-        <input type="text" id="targetName" placeholder="輸入好友暱稱..." oninput="updateUI()">
-    </div>
-
-    <div class="field">
-        <label>祝福語</label>
-        <textarea id="message" rows="2" placeholder="想對他說什麼？" oninput="updateUI()"></textarea>
-    </div>
-
-    <div class="field">
-        <label>更換背景照片</label>
-        <div class="upload-area">
-            <input type="file" id="imageInput" accept="image/*" style="display:none" onchange="uploadToCloudinary(this)">
-            <div class="upload-btn" onclick="document.getElementById('imageInput').click()">📷 點此開啟相簿並上傳</div>
-            <div id="uploadStatus">目前使用預設圖片</div>
+    <div class="input-section">
+        <div class="left-fields">
+            <label>收件人</label>
+            <input type="text" id="targetName" placeholder="誰？" maxlength="10">
+            <label>祝福語</label>
+            <textarea id="message" rows="2" placeholder="想說的話..."></textarea>
+        </div>
+        <div class="right-format">
+            <label>大小</label>
+            <select id="fontSize">
+                <option value="md">中</option>
+                <option value="lg">大</option>
+                <option value="xl">特大</option>
+            </select>
+            <label>顏色</label>
+            <select id="fontColor">
+                <option value="#333333">黑色</option>
+                <option value="#00b900">綠色</option>
+                <option value="#ff4b4b">紅色</option>
+                <option value="#4b77ff">藍色</option>
+            </select>
         </div>
     </div>
 
-    <div class="preview-card">
-        <img id="previewImg" class="preview-img" src="https://res.cloudinary.com/dnwwaush7/image/upload/f_auto,q_auto,w_800/v1774012083/cdegpgigtlzghqnjoadb.jpg">
-        <div class="preview-content">
-            <div id="ui-name" style="font-weight: bold; font-size: 18px;">To: 好友</div>
-            <div id="ui-msg" style="color: #555; margin-top: 5px;">祝你有個美好的一天！</div>
-        </div>
+    <div class="upload-hint" onclick="document.getElementById('imageInput').click()">📷 點此上傳並手動調整照片</div>
+    <input type="file" id="imageInput" accept="image/*" style="display:none" onchange="readURL(this)">
+
+    <div class="editor-container">
+        <div id="upload-demo"></div>
     </div>
 
-    <button id="sendBtn" class="btn btn-main" onclick="sendGreeting()">分享賀卡給好友</button>
-    <div id="loading-mask">系統準備中...</div>
+    <button id="sendBtn" class="btn btn-main" onclick="processAndSend()">分享自定義賀卡</button>
+    <div id="status">𓃥 正在載入 LIFF...</div>
 </div>
 
 <script>
-    const LIFF_ID = '2009222789-kAJm4sds'; 
-    const CLOUD_NAME = 'dnwwaush7'; 
-    const UPLOAD_PRESET = 'ml_default'; 
-    
-    let currentImageUrl = "https://res.cloudinary.com/dnwwaush7/image/upload/f_auto,q_auto,w_800/v1774012083/cdegpgigtlzghqnjoadb.jpg";
+    const LIFF_ID = '2009222789-kAJm4sds';
+    const CLOUD_NAME = 'dnwwaush7';
+    const UPLOAD_PRESET = 'ml_default';
+    let croppieInstance;
 
-    async function initLIFF() {
+    // 1. 初始化 LIFF 與 Croppie
+    async function init() {
         try {
             await liff.init({ liffId: LIFF_ID });
             if (!liff.isLoggedIn()) liff.login();
-            else document.getElementById('loading-mask').innerText = "𓃥 已連線";
-        } catch (err) { alert("初始化失敗: " + err.message); }
+            document.getElementById('status').innerText = "𓃥 準備就緒";
+            
+            // 初始化 Croppie (設定 20:13 比例)
+            const el = document.getElementById('upload-demo');
+            croppieInstance = new Croppie(el, {
+                viewport: { width: 300, height: 195, type: 'square' },
+                boundary: { width: '100%', height: 250 },
+                showZoomer: true,
+                enableOrientation: true
+            });
+            
+            // 預設圖片
+            croppieInstance.bind({
+                url: 'https://res.cloudinary.com/dnwwaush7/image/upload/v1774012083/cdegpgigtlzghqnjoadb.jpg'
+            });
+        } catch (err) { alert(err.message); }
     }
 
-    async function uploadToCloudinary(input) {
-        if (!input.files || !input.files[0]) return;
-        
-        const file = input.files[0];
-        const status = document.getElementById('uploadStatus');
-        const btn = document.getElementById('sendBtn');
-        
-        status.innerText = "正在上傳照片...";
-        status.style.color = "#f39c12";
-        btn.disabled = true;
+    // 2. 讀取使用者手機圖片
+    function readURL(input) {
+        if (input.files && input.files[0]) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                croppieInstance.bind({ url: e.target.result });
+                document.getElementById('status').innerText = "手指可縮放移動照片";
+            }
+            reader.readAsDataURL(input.files[0]);
+        }
+    }
 
-        const formData = new FormData();
-        formData.append('file', file);
-        formData.append('upload_preset', UPLOAD_PRESET);
+    // 3. 處理圖片並傳送 (核心邏輯)
+    async function processAndSend() {
+        const btn = document.getElementById('sendBtn');
+        const status = document.getElementById('status');
+        btn.disabled = true;
+        status.innerText = "正在裁切並優化照片...";
 
         try {
+            // 從 Croppie 取得裁切後的圖片 (自動瘦身：限制寬度 800px)
+            const croppedBlob = await croppieInstance.result({
+                type: 'blob',
+                size: { width: 800 }, // 強制瘦身，減輕傳輸負擔
+                format: 'jpeg',
+                quality: 0.8
+            });
+
+            // 上傳裁切後的 Blob 到 Cloudinary
+            status.innerText = "上傳雲端中...";
+            const formData = new FormData();
+            formData.append('file', croppedBlob);
+            formData.append('upload_preset', UPLOAD_PRESET);
+
             const response = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`, {
                 method: 'POST',
                 body: formData
             });
             const data = await response.json();
-            
+
             if (data.secure_url) {
-                // 自動套用 Cloudinary 的最佳化參數
-                currentImageUrl = data.secure_url.replace('/upload/', '/upload/f_auto,q_auto,w_800/');
-                document.getElementById('previewImg').src = currentImageUrl;
-                status.innerText = "✅ 上傳成功！";
-                status.style.color = "#00b900";
+                sendFlex(data.secure_url);
             } else {
-                throw new Error("Upload Error");
+                throw new Error("上傳失敗");
             }
         } catch (err) {
-            alert("上傳失敗，請確認 Cloudinary 的 Upload Preset 是否設定為 Unsigned 模式。");
-            status.innerText = "❌ 上傳失敗";
-            status.style.color = "red";
-        } finally {
+            alert("錯誤: " + err.message);
             btn.disabled = false;
         }
     }
 
-    function updateUI() {
+    // 4. 發送 Flex Message
+    async function sendFlex(imageUrl) {
         const name = document.getElementById('targetName').value || '好友';
         const msg = document.getElementById('message').value || '祝你有個美好的一天！';
-        document.getElementById('ui-name').innerText = "To: " + name;
-        document.getElementById('ui-msg').innerText = msg;
-    }
-
-    async function sendGreeting() {
-        const name = document.getElementById('targetName').value || '好友';
-        const msg = document.getElementById('message').value || '祝你有個美好的一天！';
+        const size = document.getElementById('fontSize').value;
+        const color = document.getElementById('fontColor').value;
 
         try {
             await liff.shareTargetPicker([{
                 "type": "flex",
-                "altText": "您收到一份驚喜賀卡！",
+                "altText": "收到一份自製賀卡！",
                 "contents": {
                     "type": "bubble",
                     "hero": {
                         "type": "image",
-                        "url": currentImageUrl,
+                        "url": imageUrl,
                         "size": "full",
                         "aspectRatio": "20:13",
                         "aspectMode": "cover"
                     },
                     "body": {
-                        "type": "box",
-                        "layout": "vertical",
-                        "contents": [
-                            { "type": "text", "text": "𓃥 白六賀卡", "weight": "bold", "color": "#00b900", "size": "xs" },
-                            { "type": "text", "text": "To: " + name, "weight": "bold", "size": "xl", "margin": "md" },
-                            { "type": "text", "text": msg, "wrap": true, "margin": "lg", "color": "#444444" }
+                        "type": "box", "layout": "vertical", "contents": [
+                            { "type": "text", "text": "To: " + name, "weight": "bold", "size": "xl" },
+                            { "type": "text", "text": msg, "wrap": true, "margin": "lg", "color": color, "size": size }
                         ]
                     },
                     "footer": {
-                        "type": "box",
-                        "layout": "vertical",
-                        "contents": [
-                            {
-                                "type": "button",
-                                "style": "primary",
-                                "color": "#00b900",
-                                "action": {
-                                    "type": "uri",
-                                    "label": "我也要製作",
-                                    "uri": "https://liff.line.me/" + LIFF_ID
-                                }
-                            }
+                        "type": "box", "layout": "vertical", "contents": [
+                            { "type": "button", "style": "primary", "color": "#00b900", "action": { "type": "uri", "label": "我也要製作", "uri": "https://liff.line.me/" + LIFF_ID } }
                         ]
                     }
                 }
             }]);
             liff.closeWindow();
-        } catch (error) {
-            alert("分享失敗：" + error.message);
+        } catch (e) {
+            alert("傳送失敗");
+            document.getElementById('sendBtn').disabled = false;
         }
     }
 
-    initLIFF();
+    init();
 </script>
 
 </body>
