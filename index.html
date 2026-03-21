@@ -10,32 +10,21 @@
     <style>
         body { font-family: -apple-system, sans-serif; background-color: #f4f4f4; padding: 10px; margin: 0; }
         .container { max-width: 450px; margin: 0 auto; background: white; padding: 15px; border-radius: 20px; box-shadow: 0 5px 20px rgba(0,0,0,0.1); }
-        
         .input-section { display: flex; gap: 8px; margin-bottom: 10px; }
         .left-fields { flex: 2.2; }
         .right-format { flex: 1; background: #f0f9f0; padding: 8px; border-radius: 10px; border: 1px solid #d0e8d0; }
-        
         label { font-size: 10px; color: #999; font-weight: bold; margin-bottom: 2px; display: block; }
         input, textarea, select { width: 100%; padding: 6px; border: 1px solid #eee; border-radius: 6px; font-size: 14px; box-sizing: border-box; margin-bottom: 6px; }
-        
-        /* 預覽容器 */
         .preview-container { margin: 10px 0; border: 2px solid #00b900; border-radius: 15px; overflow: hidden; position: relative; background: #000; line-height: 0; }
-        #upload-demo { width: 100%; height: 260px; } /* 編輯模式用 */
-        #static-img { width: 100%; display: none; } /* 轉傳模式用 */
-        
-        .text-overlay {
-            position: absolute; bottom: 30px; left: 15px; right: 15px;
-            pointer-events: none; z-index: 10; text-shadow: 0 1px 4px rgba(255,255,255,0.8); line-height: 1.4;
-        }
+        #upload-demo { width: 100%; height: 260px; }
+        #static-img { width: 100%; display: none; }
+        .text-overlay { position: absolute; bottom: 30px; left: 15px; right: 15px; pointer-events: none; z-index: 10; text-shadow: 0 1px 4px rgba(255,255,255,0.8); line-height: 1.4; }
         #p-brand { font-size: 10px; color: #00b900; font-weight: bold; display: block; }
-        #p-name { font-weight: bold; display: block; }
-        #p-msg { display: block; }
-
+        #p-name, #p-msg { display: block; }
         .btn-group { display: flex; gap: 8px; margin-top: 10px; }
         .btn { border: none; border-radius: 10px; font-weight: bold; cursor: pointer; }
         .btn-forward { flex: 2; background-color: #00b900; color: white; padding: 14px; font-size: 16px; }
         .btn-custom { flex: 1; background-color: #f0f0f0; color: #666; padding: 8px; font-size: 12px; }
-        
         #status { text-align: center; font-size: 10px; color: #bbb; margin-top: 8px; }
         .mode-tag { display: inline-block; padding: 2px 8px; border-radius: 20px; font-size: 10px; margin-bottom: 10px; }
     </style>
@@ -55,7 +44,7 @@
         <div class="right-format">
             <label>大小</label>
             <select id="fontSize" onchange="applyFormat()">
-                <option value="sm">小</option><option value="md" selected>中</option><option value="lg">大</option><option value="xl">特大</option>
+                <option value="sm">小</option><option value="md">中</option><option value="lg">大</option><option value="xl">特大</option>
             </select>
             <label>顏色</label>
             <select id="fontColor" onchange="applyFormat()">
@@ -67,7 +56,6 @@
     <div class="preview-container">
         <div id="upload-demo"></div>
         <img id="static-img" src="">
-        
         <div class="text-overlay">
             <span id="p-brand">𓃥 白六賀卡</span>
             <span id="p-name">To: 好友</span>
@@ -77,7 +65,7 @@
 
     <div class="btn-group">
         <button class="btn btn-forward" onclick="sendGreeting()">🚀 快速轉傳</button>
-        <button id="btn-new" class="btn btn-custom" onclick="location.href=location.pathname">重新製作</button>
+        <button class="btn btn-custom" onclick="location.href=location.origin + location.pathname">重新製作</button>
     </div>
     <div id="status">𓃥 載入中...</div>
 </div>
@@ -91,7 +79,12 @@
     let isForwardMode = false;
     let currentFocus = 'targetName';
     let currentImageUrl = 'https://res.cloudinary.com/dnwwaush7/image/upload/v1774012083/cdegpgigtlzghqnjoadb.jpg';
-    let formats = { targetName: { size: 'xl', color: '#333333' }, message: { size: 'md', color: '#333333' } };
+    
+    // 預設格式資訊
+    let formats = { 
+        targetName: { size: 'xl', color: '#333333' }, 
+        message: { size: 'md', color: '#333333' } 
+    };
 
     async function init() {
         try {
@@ -100,35 +93,40 @@
 
             const params = new URLSearchParams(window.location.search);
             if (params.has('img')) {
-                // 進入轉傳模式：鎖定照片
                 isForwardMode = true;
                 currentImageUrl = params.get('img');
+                
+                // 繼承文字內容
                 document.getElementById('targetName').value = params.get('to') || '';
                 document.getElementById('message').value = params.get('msg') || '';
                 
-                // UI 調整
-                document.getElementById('mode-indicator').innerText = "🔗 快速轉傳模式 (照片已鎖定)";
+                // 繼承格式 (從網址還原格式物件)
+                formats.targetName.size = params.get('ts') || 'xl';
+                formats.targetName.color = params.get('tc') || '#333333';
+                formats.message.size = params.get('ms') || 'md';
+                formats.message.color = params.get('mc') || '#333333';
+
+                // UI 設定
+                document.getElementById('mode-indicator').innerText = "🔗 快速轉傳模式 (已繼承格式)";
                 document.getElementById('mode-indicator').style.background = "#fff3e0";
                 document.getElementById('mode-indicator').style.color = "#ef6c00";
                 document.getElementById('upload-demo').style.display = 'none';
-                const sImg = document.getElementById('static-img');
-                sImg.style.display = 'block';
-                sImg.src = currentImageUrl;
-                document.getElementById('status').innerText = "𓃥 您可以修改文字後直接轉傳";
+                document.getElementById('static-img').style.display = 'block';
+                document.getElementById('static-img').src = currentImageUrl;
             } else {
-                // 編輯模式
                 croppieInstance = new Croppie(document.getElementById('upload-demo'), {
                     viewport: { width: 300, height: 195, type: 'square' },
                     boundary: { width: '100%', height: 260 }
                 });
                 croppieInstance.bind({ url: currentImageUrl });
-                document.getElementById('status').innerText = "𓃥 請上傳或調整照片";
-                // 增加上傳提示
-                const hint = document.createElement('div');
-                hint.className = 'status';
-                hint.innerHTML = '<input type="file" id="f" hidden onchange="readF(this)"><span onclick="document.getElementById(\'f\').click()" style="color:#00b900;cursor:pointer;text-decoration:underline">📷 點此上傳新照片</span>';
-                document.body.appendChild(hint);
+                // 全新製作模式下增加上傳按鈕
+                const h = document.createElement('div');
+                h.style = "text-align:center; margin-top:5px;";
+                h.innerHTML = '<input type="file" id="f" hidden onchange="readF(this)"><span onclick="document.getElementById(\'f\').click()" style="color:#00b900;font-size:12px;cursor:pointer">📷 點此更換新照片</span>';
+                document.querySelector('.container').insertBefore(h, document.querySelector('.btn-group'));
             }
+            document.getElementById('status').innerText = "𓃥 準備就緒";
+            setCurrentField('targetName'); // 初始化選單狀態
             updateUI();
         } catch (e) { alert(e); }
     }
@@ -143,6 +141,7 @@
 
     function setCurrentField(f) {
         currentFocus = f;
+        // 同步選單至該欄位的當前格式
         document.getElementById('fontSize').value = formats[f].size;
         document.getElementById('fontColor').value = formats[f].color;
     }
@@ -159,16 +158,16 @@
         pN.innerText = "To: " + (document.getElementById('targetName').value || '好友');
         pN.style.color = formats.targetName.color;
         pN.style.fontSize = { sm:'13px', md:'16px', lg:'20px', xl:'24px' }[formats.targetName.size];
+        
         pM.innerText = document.getElementById('message').value || '祝你有個美好的一天！';
         pM.style.color = formats.message.color;
         pM.style.fontSize = { sm:'13px', md:'16px', lg:'20px', xl:'24px' }[formats.message.size];
     }
 
     async function sendGreeting() {
-        document.getElementById('status').innerText = "準備傳送中...";
+        document.getElementById('status').innerText = "傳送中...";
         let finalImg = currentImageUrl;
 
-        // 如果是全新製作模式，才需要裁切並上傳
         if (!isForwardMode) {
             try {
                 const blob = await croppieInstance.result({ type: 'blob', size: { width: 800 }, format: 'jpeg' });
@@ -178,12 +177,17 @@
                 const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`, { method: 'POST', body: fd });
                 const data = await res.json();
                 finalImg = data.secure_url;
-            } catch (e) { alert("圖片處理失敗"); return; }
+            } catch (e) { alert("處理失敗"); return; }
         }
 
         const to = document.getElementById('targetName').value || '好友';
         const msg = document.getElementById('message').value || '祝你有個美好的一天！';
-        const forwardUrl = `https://liff.line.me/${LIFF_ID}?img=${encodeURIComponent(finalImg)}&to=${encodeURIComponent(to)}&msg=${encodeURIComponent(msg)}`;
+        
+        // 封裝所有參數：img, to, msg, ts(target size), tc(target color), ms(message size), mc(message color)
+        const forwardUrl = `https://liff.line.me/${LIFF_ID}?img=${encodeURIComponent(finalImg)}` +
+            `&to=${encodeURIComponent(to)}&msg=${encodeURIComponent(msg)}` +
+            `&ts=${formats.targetName.size}&tc=${encodeURIComponent(formats.targetName.color)}` +
+            `&ms=${formats.message.size}&mc=${encodeURIComponent(formats.message.color)}`;
 
         liff.shareTargetPicker([{
             "type": "flex",
