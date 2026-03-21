@@ -22,24 +22,23 @@
         #p-brand { font-size: 10px; color: #00b900; font-weight: bold; display: block; }
         #p-name, #p-msg { display: block; }
         .btn-group { display: flex; gap: 8px; margin-top: 10px; }
-        .btn { border: none; border-radius: 10px; font-weight: bold; cursor: pointer; }
+        .btn { border: none; border-radius: 10px; font-weight: bold; cursor: pointer; transition: 0.2s; }
         .btn-forward { flex: 2; background-color: #00b900; color: white; padding: 14px; font-size: 16px; }
         .btn-custom { flex: 1; background-color: #f0f0f0; color: #666; padding: 8px; font-size: 12px; }
         #status { text-align: center; font-size: 10px; color: #bbb; margin-top: 8px; }
-        .mode-tag { display: inline-block; padding: 2px 8px; border-radius: 20px; font-size: 10px; margin-bottom: 10px; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <div id="mode-indicator" class="mode-tag" style="background: #e3f2fd; color: #1976d2;">🆕 全新製作模式</div>
+    <div id="mode-tag" style="font-size: 10px; padding: 2px 8px; border-radius: 10px; display: inline-block; margin-bottom: 8px;"></div>
 
     <div class="input-section">
         <div class="left-fields">
             <label>收件人</label>
             <input type="text" id="targetName" placeholder="收件人姓名" onfocus="setCurrentField('targetName')" oninput="updateUI()">
             <label>祝福語</label>
-            <textarea id="message" rows="2" placeholder="祝福內容" onfocus="setCurrentField('message')" oninput="updateUI()"></textarea>
+            <textarea id="message" rows="2" placeholder="內容..." onfocus="setCurrentField('message')" oninput="updateUI()"></textarea>
         </div>
         <div class="right-format">
             <label>大小</label>
@@ -64,10 +63,10 @@
     </div>
 
     <div class="btn-group">
-        <button class="btn btn-forward" onclick="sendGreeting()">🚀 快速轉傳</button>
+        <button class="btn btn-forward" onclick="sendGreeting()">🚀 點此傳送</button>
         <button class="btn btn-custom" onclick="location.href=location.origin + location.pathname">重新製作</button>
     </div>
-    <div id="status">𓃥 載入中...</div>
+    <div id="status">𓃥 準備中...</div>
 </div>
 
 <script>
@@ -79,12 +78,7 @@
     let isForwardMode = false;
     let currentFocus = 'targetName';
     let currentImageUrl = 'https://res.cloudinary.com/dnwwaush7/image/upload/v1774012083/cdegpgigtlzghqnjoadb.jpg';
-    
-    // 預設格式資訊
-    let formats = { 
-        targetName: { size: 'xl', color: '#333333' }, 
-        message: { size: 'md', color: '#333333' } 
-    };
+    let formats = { targetName: { size: 'xl', color: '#333333' }, message: { size: 'md', color: '#333333' } };
 
     async function init() {
         try {
@@ -92,41 +86,42 @@
             if (!liff.isLoggedIn()) liff.login();
 
             const params = new URLSearchParams(window.location.search);
+            const tag = document.getElementById('mode-tag');
+
             if (params.has('img')) {
+                // --- B 轉傳模式：鎖定 A 的心血 ---
                 isForwardMode = true;
                 currentImageUrl = params.get('img');
-                
-                // 繼承文字內容
                 document.getElementById('targetName').value = params.get('to') || '';
                 document.getElementById('message').value = params.get('msg') || '';
-                
-                // 繼承格式 (從網址還原格式物件)
                 formats.targetName.size = params.get('ts') || 'xl';
                 formats.targetName.color = params.get('tc') || '#333333';
                 formats.message.size = params.get('ms') || 'md';
                 formats.message.color = params.get('mc') || '#333333';
 
-                // UI 設定
-                document.getElementById('mode-indicator').innerText = "🔗 快速轉傳模式 (已繼承格式)";
-                document.getElementById('mode-indicator').style.background = "#fff3e0";
-                document.getElementById('mode-indicator').style.color = "#ef6c00";
+                tag.innerText = "🔗 快速轉傳 (照片已由原寄件者裁切)";
+                tag.style.background = "#fff3e0"; tag.style.color = "#ef6c00";
                 document.getElementById('upload-demo').style.display = 'none';
                 document.getElementById('static-img').style.display = 'block';
                 document.getElementById('static-img').src = currentImageUrl;
             } else {
+                // --- A 製作模式：自由發揮 ---
+                tag.innerText = "🆕 全新製作模式";
+                tag.style.background = "#e3f2fd"; tag.style.color = "#1976d2";
                 croppieInstance = new Croppie(document.getElementById('upload-demo'), {
                     viewport: { width: 300, height: 195, type: 'square' },
                     boundary: { width: '100%', height: 260 }
                 });
                 croppieInstance.bind({ url: currentImageUrl });
-                // 全新製作模式下增加上傳按鈕
+                
+                // A 模式才有的上傳按鈕
                 const h = document.createElement('div');
                 h.style = "text-align:center; margin-top:5px;";
-                h.innerHTML = '<input type="file" id="f" hidden onchange="readF(this)"><span onclick="document.getElementById(\'f\').click()" style="color:#00b900;font-size:12px;cursor:pointer">📷 點此更換新照片</span>';
+                h.innerHTML = '<input type="file" id="f" hidden onchange="readF(this)"><span onclick="document.getElementById(\'f\').click()" style="color:#00b900;font-size:11px;cursor:pointer;text-decoration:underline">📷 點此更換 A 的製作照片</span>';
                 document.querySelector('.container').insertBefore(h, document.querySelector('.btn-group'));
             }
             document.getElementById('status').innerText = "𓃥 準備就緒";
-            setCurrentField('targetName'); // 初始化選單狀態
+            setCurrentField('targetName'); 
             updateUI();
         } catch (e) { alert(e); }
     }
@@ -141,7 +136,6 @@
 
     function setCurrentField(f) {
         currentFocus = f;
-        // 同步選單至該欄位的當前格式
         document.getElementById('fontSize').value = formats[f].size;
         document.getElementById('fontColor').value = formats[f].color;
     }
@@ -158,32 +152,34 @@
         pN.innerText = "To: " + (document.getElementById('targetName').value || '好友');
         pN.style.color = formats.targetName.color;
         pN.style.fontSize = { sm:'13px', md:'16px', lg:'20px', xl:'24px' }[formats.targetName.size];
-        
         pM.innerText = document.getElementById('message').value || '祝你有個美好的一天！';
         pM.style.color = formats.message.color;
         pM.style.fontSize = { sm:'13px', md:'16px', lg:'20px', xl:'24px' }[formats.message.size];
     }
 
     async function sendGreeting() {
-        document.getElementById('status').innerText = "傳送中...";
+        const btn = document.querySelector('.btn-forward');
+        btn.disabled = true;
+        document.getElementById('status').innerText = "上傳中，請稍候...";
         let finalImg = currentImageUrl;
 
         if (!isForwardMode) {
             try {
-                const blob = await croppieInstance.result({ type: 'blob', size: { width: 800 }, format: 'jpeg' });
+                // A 製作：將調整過的照片裁切並瘦身 (800px)
+                const blob = await croppieInstance.result({ type: 'blob', size: { width: 800 }, format: 'jpeg', quality: 0.8 });
                 const fd = new FormData();
                 fd.append('file', blob);
                 fd.append('upload_preset', UPLOAD_PRESET);
                 const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`, { method: 'POST', body: fd });
                 const data = await res.json();
                 finalImg = data.secure_url;
-            } catch (e) { alert("處理失敗"); return; }
+            } catch (e) { alert("上傳失敗"); btn.disabled = false; return; }
         }
 
         const to = document.getElementById('targetName').value || '好友';
         const msg = document.getElementById('message').value || '祝你有個美好的一天！';
         
-        // 封裝所有參數：img, to, msg, ts(target size), tc(target color), ms(message size), mc(message color)
+        // 將 A 的所有設定 (圖片 URL、文字、格式) 全部塞入連結
         const forwardUrl = `https://liff.line.me/${LIFF_ID}?img=${encodeURIComponent(finalImg)}` +
             `&to=${encodeURIComponent(to)}&msg=${encodeURIComponent(msg)}` +
             `&ts=${formats.targetName.size}&tc=${encodeURIComponent(formats.targetName.color)}` +
@@ -191,7 +187,7 @@
 
         liff.shareTargetPicker([{
             "type": "flex",
-            "altText": "𓃥 收到一份來自白六的賀卡！",
+            "altText": "𓃥 收到一份專屬賀卡！",
             "contents": {
                 "type": "bubble",
                 "hero": { "type": "image", "url": finalImg, "size": "full", "aspectRatio": "20:13", "aspectMode": "cover" },
@@ -208,7 +204,7 @@
                     ]
                 }
             }
-        }]).then(() => liff.closeWindow());
+        }]).then(() => { liff.closeWindow(); }).catch(() => { btn.disabled = false; });
     }
 
     init();
