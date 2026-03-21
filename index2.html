@@ -11,13 +11,15 @@
         body { font-family: -apple-system, sans-serif; background-color: #f2f4f7; margin: 0; padding: 10px; padding-bottom: 110px; }
         .container { max-width: 500px; margin: 0 auto; background: white; padding: 15px; border-radius: 28px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); }
         
-        /* 編輯選單 */
+        /* 情境式編輯器 */
         .editor-box { display: flex; gap: 10px; margin-bottom: 10px; background: #fafafa; padding: 12px; border-radius: 20px; border: 1px solid #eee; }
         .input-main { flex: 2; }
-        .input-style { flex: 1.2; border-left: 1px solid #eee; padding-left: 10px; }
+        .input-style { flex: 1.1; border-left: 2px solid #00b900; padding-left: 10px; transition: 0.3s; }
         label { font-size: 10px; color: #bbb; font-weight: bold; display: block; margin-bottom: 2px; }
+        #focus-tag { font-size: 11px; color: #00b900; margin-bottom: 5px; font-weight: 900; }
         input, textarea, select { width: 100%; padding: 7px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; box-sizing: border-box; margin-bottom: 5px; outline: none; }
-        
+        input:focus, textarea:focus { border-color: #00b900; background: #fff; }
+
         /* 畫布區 */
         .stage { margin: 10px 0; border: 4px solid #00b900; border-radius: 22px; overflow: hidden; position: relative; background: #000; aspect-ratio: 20/13; }
         #cp-wrap { width: 100%; height: 100%; }
@@ -27,7 +29,7 @@
         /* 縮圖操作 */
         .tray { display: flex; gap: 10px; overflow-x: auto; padding: 10px 5px; scrollbar-width: none; }
         .t-item { width: 75px; height: 50px; border-radius: 10px; border: 2px solid #eee; object-fit: cover; cursor: pointer; flex-shrink: 0; transition: 0.2s; }
-        .t-item.active { border-color: #00b900; transform: scale(1.05); }
+        .t-item.active { border-color: #00b900; transform: scale(1.05); box-shadow: 0 4px 10px rgba(0,185,0,0.2); }
         .t-add { width: 75px; height: 50px; border-radius: 10px; border: 2px dashed #ccc; display: flex; align-items: center; justify-content: center; color: #ccc; font-size: 26px; cursor: pointer; flex-shrink: 0; }
 
         /* 下拉選單 */
@@ -52,17 +54,18 @@
     <div class="editor-box">
         <div class="input-main">
             <label>收件人 (To)</label>
-            <input type="text" id="v-to" placeholder="名字" oninput="update('to')">
+            <input type="text" id="v-to" placeholder="名字" oninput="update('to')" onfocus="setContext('to')">
             <label>祝福語 (Msg)</label>
-            <textarea id="v-msg" rows="2" placeholder="內容" oninput="update('msg')"></textarea>
+            <textarea id="v-msg" rows="2" placeholder="內容" oninput="update('msg')" onfocus="setContext('msg')"></textarea>
         </div>
-        <div class="input-style">
-            <label>收件人大小</label>
-            <select id="v-ts" onchange="update('ts')"><option value="md">中</option><option value="lg">大</option><option value="xl" selected>特大</option></select>
-            <label>留言大小</label>
-            <select id="v-ms" onchange="update('ms')"><option value="sm">小</option><option value="md" selected>中</option><option value="lg">大</option></select>
-            <label>通用顏色</label>
-            <input type="color" id="v-tc" value="#333333" onchange="update('tc')">
+        <div class="input-style" id="style-panel">
+            <div id="focus-tag">調整收件人</div>
+            <label>字體大小</label>
+            <select id="v-size" onchange="applyStyle('size')">
+                <option value="md">中</option><option value="lg">大</option><option value="xl">特大</option>
+            </select>
+            <label>文字顏色</label>
+            <input type="color" id="v-color" value="#333333" onchange="applyStyle('color')">
         </div>
     </div>
 
@@ -83,7 +86,7 @@
 
 <div class="mask" id="mask" onclick="closeMenu()"></div>
 <div id="menu">
-    <div class="opt" onclick="triggerFile()">📷 更換這張照片 (保留文字設定)</div>
+    <div class="opt" onclick="triggerFile()">📷 更換照片 (保留文字設定)</div>
     <div class="opt del" onclick="doDel()">🗑️ 刪除此分頁</div>
     <div class="opt" onclick="closeMenu()" style="color:#999">取消</div>
 </div>
@@ -97,11 +100,8 @@
     const CLOUD_NAME = 'dnwwaush7';
     const UPLOAD_PRESET = 'ml_default';
     
-    let cp;
-    let isFwd = false;
-    let cards = []; 
-    let active = 0;
-    let menuTarget = 0;
+    let cp, isFwd = false, cards = [], active = 0, menuTarget = 0;
+    let currentCtx = 'to'; // 目前調整的是 to 還是 msg
 
     async function init() {
         await liff.init({ liffId: LIFF_ID });
@@ -116,10 +116,43 @@
                 viewport: { width: 300, height: 195, type: 'square' },
                 boundary: { width: '100%', height: '100%' }, showZoomer: false
             });
-            cards = [{ img: 'https://res.cloudinary.com/dnwwaush7/image/upload/v1774012083/cdegpgigtlzghqnjoadb.jpg', to: '', msg: '', ts: 'xl', ms: 'md', tc: '#333333', sync: true }];
+            cards = [{ img: 'https://res.cloudinary.com/dnwwaush7/image/upload/v1774012083/cdegpgigtlzghqnjoadb.jpg', to: '', msg: '', toSize: 'xl', msgSize: 'md', toColor: '#333333', msgColor: '#333333', sync: true }];
         }
-        render();
-        load(0);
+        render(); load(0);
+    }
+
+    // 切換編輯情境
+    function setContext(ctx) {
+        currentCtx = ctx;
+        const tag = document.getElementById('focus-tag');
+        tag.innerText = ctx === 'to' ? '調整收件人' : '調整留言';
+        
+        const c = cards[active];
+        document.getElementById('v-size').value = ctx === 'to' ? c.toSize : c.msgSize;
+        document.getElementById('v-color').value = ctx === 'to' ? c.toColor : c.msgColor;
+    }
+
+    // 套用樣式
+    function applyStyle(type) {
+        const val = document.getElementById(type === 'size' ? 'v-size' : 'v-color').value;
+        const c = cards[active];
+        if (currentCtx === 'to') {
+            c.toSize = type === 'size' ? val : c.toSize;
+            c.toColor = type === 'color' ? val : c.toColor;
+        } else {
+            c.msgSize = type === 'size' ? val : c.msgSize;
+            c.msgColor = type === 'color' ? val : c.msgColor;
+        }
+        
+        if (active === 0) {
+            for (let i = 1; i < cards.length; i++) {
+                if (cards[i].sync) {
+                    if (currentCtx === 'to') { cards[i].toSize = c.toSize; cards[i].toColor = c.toColor; }
+                    else { cards[i].msgSize = c.msgSize; cards[i].msgColor = c.msgColor; }
+                }
+            }
+        } else { c.sync = false; }
+        refresh();
     }
 
     function render() {
@@ -130,9 +163,12 @@
             img.className = `t-item ${i === active ? 'active' : ''}`;
             img.src = c.img;
             let timer;
-            img.onclick = () => {
+            img.onclick = async () => {
                 clearTimeout(timer);
-                timer = setTimeout(() => { active = i; render(); load(i); }, 250);
+                timer = setTimeout(async () => {
+                    await autoSavePhoto(); // 切換前存檔
+                    active = i; render(); load(i);
+                }, 250);
             };
             img.ondblclick = () => {
                 clearTimeout(timer);
@@ -145,24 +181,29 @@
         t.querySelector('.t-add').style.display = (isFwd || cards.length >= 10) ? 'none' : 'flex';
     }
 
+    async function autoSavePhoto() {
+        if (!isFwd && cp) {
+            const blob = await cp.result({ type: 'blob', size: { width: 800 }, format: 'jpeg' });
+            cards[active].blob = blob;
+            cards[active].img = URL.createObjectURL(blob);
+        }
+    }
+
     function load(idx) {
         const c = cards[idx];
         document.getElementById('v-to').value = c.to;
         document.getElementById('v-msg').value = c.msg;
-        document.getElementById('v-ts').value = c.ts;
-        document.getElementById('v-ms').value = c.ms || 'md';
-        document.getElementById('v-tc').value = c.tc;
+        setContext(currentCtx); // 載入目前情境的數值
         if (isFwd) document.getElementById('img-fix').src = c.img;
         else cp.bind({ url: c.img });
         refresh();
     }
 
     function update(f) {
-        const v = document.getElementById(`v-${f}`).value;
-        cards[active][f] = v;
+        cards[active][f] = document.getElementById(`v-${f}`).value;
         if (active === 0) {
             for (let i = 1; i < cards.length; i++) {
-                if (cards[i].sync) cards[i][f] = v;
+                if (cards[i].sync) cards[i][f] = cards[0][f];
             }
         } else { cards[active].sync = false; }
         refresh();
@@ -172,25 +213,28 @@
         const c = cards[active];
         const t = document.getElementById('p-to'), m = document.getElementById('p-msg');
         t.innerText = "To: " + (c.to || "朋友");
-        t.style.color = c.tc;
-        t.style.fontSize = { md:'16px', lg:'20px', xl:'24px' }[c.ts];
+        t.style.color = c.toColor;
+        t.style.fontSize = { md:'16px', lg:'20px', xl:'24px' }[c.toSize];
         m.innerText = c.msg || "祝你有個美好的一天！";
-        m.style.color = c.tc;
-        m.style.fontSize = { sm:'13px', md:'16px', lg:'20px' }[c.ms || 'md'];
+        m.style.color = c.msgColor;
+        m.style.fontSize = { md:'14px', lg:'17px', xl:'21px' }[c.msgSize];
     }
 
-    function handleFile(input) {
+    async function handleFile(input) {
         if (input.files && input.files[0]) {
             const reader = new FileReader();
-            reader.onload = e => {
+            reader.onload = async e => {
                 if (document.getElementById('menu').classList.contains('open')) {
-                    // 更換照片：僅更換圖片源，保留文字數據
                     cards[menuTarget].img = e.target.result;
                     if (menuTarget === active) cp.bind({ url: e.target.result });
                     closeMenu();
                 } else {
-                    // 新增照片
-                    cards.push({ img: e.target.result, to: cards[0].to, msg: cards[0].msg, ts: cards[0].ts, ms: cards[0].ms || 'md', tc: cards[0].tc, sync: true });
+                    await autoSavePhoto(); // 新增前存好當前的
+                    cards.push({ 
+                        img: e.target.result, to: cards[0].to, msg: cards[0].msg, 
+                        toSize: cards[0].toSize, msgSize: cards[0].msgSize, 
+                        toColor: cards[0].toColor, msgColor: cards[0].msgColor, sync: true 
+                    });
                     active = cards.length - 1;
                 }
                 render(); load(active);
@@ -199,23 +243,15 @@
         }
     }
 
-    function closeMenu() {
-        document.getElementById('mask').style.display = 'none';
-        document.getElementById('menu').classList.remove('open');
-    }
+    function closeMenu() { document.getElementById('mask').style.display = 'none'; document.getElementById('menu').classList.remove('open'); }
     function triggerFile() { document.getElementById('f-in').click(); }
-    function doDel() {
-        if (cards.length <= 1) return;
-        cards.splice(menuTarget, 1);
-        active = 0; render(); load(0); closeMenu();
-    }
+    function doDel() { if (cards.length <= 1) return; cards.splice(menuTarget, 1); active = 0; render(); load(0); closeMenu(); }
 
     async function send() {
         const b = document.getElementById('go'); b.disabled = true;
         try {
             if (!isFwd) {
-                const blob = await cp.result({ type: 'blob', size: { width: 800 }, format: 'jpeg' });
-                cards[active].blob = blob;
+                await autoSavePhoto(); // 送出前存檔
                 for (let i = 0; i < cards.length; i++) {
                     const fd = new FormData();
                     fd.append('file', cards[i].blob || cards[i].img);
@@ -225,7 +261,7 @@
                     cards[i].img = d.secure_url;
                 }
             }
-            const data = cards.map(c => ({ img: c.img, to: c.to, msg: c.msg, ts: c.ts, ms: c.ms || 'md', tc: c.tc }));
+            const data = cards.map(c => ({ img: c.img, to: c.to, msg: c.msg, ts: c.toSize, ms: c.msgSize, tc: c.toColor, mc: c.msgColor }));
             const url = `https://liff.line.me/${LIFF_ID}?data=${encodeURIComponent(JSON.stringify(data))}`;
             const bubbles = data.map((c, i) => ({
                 "type": "bubble", "size": "mega",
@@ -233,14 +269,14 @@
                 "body": { "type": "box", "layout": "vertical", "contents": [
                     { "type": "text", "text": `𓃥 白六賀卡·超 (${i+1}/${data.length})`, "weight": "bold", "color": "#00b900", "size": "xs" },
                     { "type": "text", "text": "To: " + (c.to || "朋友"), "weight": "bold", "size": c.ts, "color": c.tc, "margin": "md" },
-                    { "type": "text", "text": c.msg || "祝你有個美好的一天！", "wrap": true, "margin": "sm", "size": c.ms, "color": c.tc }
+                    { "type": "text", "text": c.msg || "祝你有個美好的一天！", "wrap": true, "margin": "sm", "size": c.ms === 'xl' ? 'lg' : c.ms, "color": c.mc }
                 ]},
                 "footer": { "type": "box", "layout": "horizontal", "spacing": "sm", "contents": [
                     { "type": "button", "style": "primary", "color": "#00b900", "height": "sm", "action": { "type": "uri", "label": "快速轉傳", "uri": url } },
                     { "type": "button", "style": "secondary", "color": "#eeeeee", "height": "sm", "action": { "type": "uri", "label": "重新製作", "uri": `https://liff.line.me/${LIFF_ID}` } }
                 ]}
             }));
-            await liff.shareTargetPicker([{ "type": "flex", "altText": "𓃥 白六賀卡·超驚喜組合！", "contents": { "type": "carousel", "contents": bubbles }}]);
+            await liff.shareTargetPicker([{ "type": "flex", "altText": "𓃥 收到一份白六賀卡組合！", "contents": { "type": "carousel", "contents": bubbles }}]);
             liff.closeWindow();
         } catch (e) { b.disabled = false; }
     }
