@@ -6,112 +6,150 @@
     <title>𓃥 白六賀卡製作</title>
     <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <style>
-        body { font-family: sans-serif; background-color: #f4f7f6; padding: 20px; color: #333; }
-        .container { max-width: 500px; margin: 0 auto; background: white; padding: 25px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
-        h2 { color: #1DB446; text-align: center; }
-        .form-group { margin-bottom: 15px; }
-        label { display: block; margin-bottom: 5px; font-weight: bold; }
-        input, textarea, select { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; }
-        button { width: 100%; padding: 12px; background-color: #1DB446; color: white; border: none; border-radius: 8px; font-size: 16px; cursor: pointer; margin-top: 10px; }
-        button.secondary { background-color: #555; }
-        .preview-box { margin-top: 20px; border: 2px dashed #1DB446; padding: 15px; border-radius: 10px; text-align: center; }
-        #previewImg { width: 100%; border-radius: 5px; margin-bottom: 10px; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background-color: #f0f2f5; padding: 15px; margin: 0; }
+        .card-tool { max-width: 450px; margin: 0 auto; background: white; padding: 20px; border-radius: 16px; box-shadow: 0 8px 24px rgba(0,0,0,0.1); }
+        h2 { color: #00b900; text-align: center; margin-top: 0; font-size: 22px; }
+        .input-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 6px; font-weight: 600; font-size: 14px; color: #444; }
+        input, textarea, select { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 10px; box-sizing: border-box; font-size: 16px; }
+        textarea { resize: none; }
+        .btn { width: 100%; padding: 14px; border: none; border-radius: 10px; font-size: 16px; font-weight: bold; cursor: pointer; margin-top: 10px; transition: 0.3s; }
+        .btn-send { background-color: #00b900; color: white; }
+        .btn-share { background-color: #f8f9fa; color: #555; border: 1px solid #ddd; }
+        .preview-area { margin-top: 20px; padding: 15px; border: 2px dashed #00b900; border-radius: 12px; background-color: #f9fff9; }
+        .preview-img { width: 100%; height: 180px; object-fit: cover; border-radius: 8px; margin-bottom: 10px; }
+        #status { text-align: center; font-size: 12px; color: #999; margin-top: 10px; }
     </style>
 </head>
 <body>
 
-<div class="container">
+<div class="card-tool">
     <h2>𓃥 白六賀卡製作器</h2>
     
-    <div class="form-group">
-        <label>收件人姓名</label>
-        <input type="text" id="targetName" placeholder="例如：好朋友小明">
+    <div class="input-group">
+        <label>收件人</label>
+        <input type="text" id="targetName" placeholder="想送給誰？" oninput="syncPreview()">
     </div>
 
-    <div class="form-group">
-        <label>賀卡主題</label>
-        <select id="theme" onchange="updatePreview()">
-            <option value="https://images.unsplash.com/photo-1513519245088-0e12902e5a38?w=800">簡約慶祝</option>
-            <option value="https://images.unsplash.com/photo-1530103043960-ef38714abb15?w=800">派對氣氛</option>
-            <option value="https://images.unsplash.com/photo-1496337589254-7e19d01ced44?w=800">溫馨感激</option>
+    <div class="input-group">
+        <label>挑選背景</label>
+        <select id="theme" onchange="syncPreview()">
+            <option value="https://images.unsplash.com/photo-1513519245088-0e12902e5a38?w=800">簡約北歐風</option>
+            <option value="https://images.unsplash.com/photo-1530103043960-ef38714abb15?w=800">繽紛派對</option>
+            <option value="https://images.unsplash.com/photo-1496337589254-7e19d01ced44?w=800">星空感激</option>
+            <option value="https://images.unsplash.com/photo-1512909006721-3d6018887383?w=800">節慶暖意</option>
         </select>
     </div>
 
-    <div class="form-group">
-        <label>祝福的話</label>
-        <textarea id="message" rows="3" placeholder="輸入你想說的話..."></textarea>
+    <div class="input-group">
+        <label>祝福語</label>
+        <textarea id="message" rows="3" placeholder="寫下你的祝福..." oninput="syncPreview()"></textarea>
     </div>
 
-    <div class="preview-box">
-        <p style="font-size: 12px; color: #888;">預覽效果</p>
-        <img id="previewImg" src="https://images.unsplash.com/photo-1513519245088-0e12902e5a38?w=800">
-        <div id="previewText" style="font-weight: bold;"></div>
+    <div class="preview-area">
+        <img id="previewImg" class="preview-img" src="https://images.unsplash.com/photo-1513519245088-0e12902e5a38?w=800">
+        <div style="font-size: 14px; color: #888;">預覽：</div>
+        <div id="previewText" style="font-weight: bold; margin-top: 5px;">To: 好友</div>
     </div>
 
-    <button onclick="sendCard()">傳送賀卡給好友</button>
-    <button class="secondary" onclick="shareApp()">推薦這個工具給朋友</button>
+    <button class="btn btn-send" onclick="sendFlexCard()">傳送賀卡給好友</button>
+    <button class="btn btn-share" onclick="shareApp()">分享此工具給朋友</button>
+    
+    <div id="status">LIFF 初始化中...</div>
 </div>
 
 <script>
-    // 請替換成你的 LIFF ID
-    const MY_LIFF_ID = 'YOUR_LIFF_ID'; 
+    // 這裡替換成你的真實 LIFF ID
+    const LIFF_ID = '2009222789-kAJm4sds'; 
 
-    async function initLIFF() {
+    async function init() {
+        const statusDiv = document.getElementById('status');
         try {
-            await liff.init({ liffId: MY_LIFF_ID });
+            await liff.init({ liffId: LIFF_ID });
             if (!liff.isLoggedIn()) {
+                statusDiv.innerText = "正在導向登入...";
                 liff.login();
+            } else {
+                statusDiv.innerText = "𓃥 系統就緒";
             }
         } catch (err) {
-            console.error('LIFF 初始化失敗', err);
+            statusDiv.innerText = "初始化失敗";
+            alert("LIFF 初始化錯誤: " + err.message);
         }
     }
 
-    function updatePreview() {
+    function syncPreview() {
+        const name = document.getElementById('targetName').value || '好友';
         document.getElementById('previewImg').src = document.getElementById('theme').value;
+        document.getElementById('previewText').innerText = "To: " + name;
     }
 
-async function sendCard() {
-    // 檢查初始化狀態
-    if (!liff.isInClient()) {
-        alert('偵測到不在 LINE App 內');
-        return;
-    }
+    async function sendFlexCard() {
+        const name = document.getElementById('targetName').value || '好友';
+        const msg = document.getElementById('message').value || '祝你有個美好的一天！';
+        const img = document.getElementById('theme').value;
 
-    if (!liff.isApiAvailable('shareTargetPicker')) {
-        alert('後台 Share Target Picker 權限可能未開啟');
-        return;
-    }
-    
-    // ... 原本的發送邏輯 ...
-}
+        // 核心檢查：後台開關
+        if (!liff.isApiAvailable('shareTargetPicker')) {
+            alert("⚠️ 錯誤：後台尚未開啟 'Share target picker' 功能，請檢查 LINE Developers 設定。");
+            return;
+        }
 
-        const res = await liff.shareTargetPicker([{ "type": "flex", "altText": "收到一份賀卡！", "contents": flexContent }]);
-        if (res) liff.closeWindow();
+        const flexMessage = {
+            "type": "bubble",
+            "hero": { "type": "image", "url": img, "size": "full", "aspectRatio": "20:13", "aspectMode": "cover" },
+            "body": {
+                "type": "box", "layout": "vertical", "contents": [
+                    { "type": "text", "text": "𓃥 白六賀卡", "weight": "bold", "color": "#00b900", "size": "sm" },
+                    { "type": "text", "text": "To: " + name, "weight": "bold", "size": "xl", "margin": "md" },
+                    { "type": "text", "text": msg, "wrap": true, "margin": "lg", "color": "#444444", "size": "md" }
+                ]
+            },
+            "footer": {
+                "type": "box", "layout": "vertical", "contents": [
+                    { "type": "button", "style": "primary", "color": "#00b900", "action": { "type": "uri", "label": "我也要製作", "uri": "https://liff.line.me/" + 2009222789-kAJm4sds } }
+                ]
+            }
+        };
+
+        try {
+            const res = await liff.shareTargetPicker([
+                { "type": "flex", "altText": "您收到一份來自好友的賀卡！", "contents": flexMessage }
+            ]);
+            if (res) {
+                liff.closeWindow(); // 傳送成功後關閉視窗
+            }
+        } catch (error) {
+            alert("傳送失敗原因：" + error.message);
+        }
     }
 
     async function shareApp() {
-        await liff.shareTargetPicker([{
-            "type": "flex",
-            "altText": "推薦一個超棒的賀卡製作器！",
-            "contents": {
-                "type": "bubble",
-                "body": {
-                    "type": "box", "layout": "vertical", "contents": [
-                        { "type": "text", "text": "𓃥 白六賀卡製作器", "weight": "bold", "size": "lg" },
-                        { "type": "text", "text": "動動手指就能送出精美的 Flex Message 賀卡，快來試試！", "wrap": true, "size": "sm", "margin": "sm" }
-                    ]
-                },
-                "footer": {
-                    "type": "box", "layout": "vertical", "contents": [
-                        { "type": "button", "style": "link", "action": { "type": "uri", "label": "立即開啟", "uri": "https://liff.line.me/" + MY_LIFF_ID } }
-                    ]
+        try {
+            await liff.shareTargetPicker([{
+                "type": "flex",
+                "altText": "推薦一個有趣的賀卡製作器！",
+                "contents": {
+                    "type": "bubble",
+                    "body": {
+                        "type": "box", "layout": "vertical", "contents": [
+                            { "type": "text", "text": "𓃥 白六賀卡製作器", "weight": "bold", "size": "lg" },
+                            { "type": "text", "text": "點擊下方按鈕，開始製作你的專屬 Flex 賀卡分享給好友吧！", "wrap": true, "size": "sm", "margin": "sm" }
+                        ]
+                    },
+                    "footer": {
+                        "type": "box", "layout": "vertical", "contents": [
+                            { "type": "button", "style": "link", "action": { "type": "uri", "label": "立即嘗試", "uri": "https://liff.line.me/" + LIFF_ID } }
+                        ]
+                    }
                 }
-            }
-        }]);
+            }]);
+        } catch (e) {
+            alert("分享工具失敗：" + e.message);
+        }
     }
 
-    initLIFF();
+    init();
 </script>
 
 </body>
