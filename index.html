@@ -27,12 +27,12 @@
 <body>
 
 <div class="container">
-    <div style="padding:5px;"><span style="font-weight:900; color:#00b900;">𓃥 白六賀卡·單張版</span></div>
+    <div style="padding:5px;"><span style="font-weight:900; color:#00b900;">𓃥 白六賀卡·穩定版</span></div>
 
     <div class="editor-box">
         <div class="input-main">
             <label>姓名</label>
-            <input type="text" id="v-to" placeholder="收件人名字" oninput="update()" onfocus="setContext('to')">
+            <input type="text" id="v-to" placeholder="名字" oninput="update()" onfocus="setContext('to')">
             <label>祝福</label>
             <textarea id="v-msg" rows="2" placeholder="內容" oninput="update()" onfocus="setContext('msg')"></textarea>
             <button class="btn-upload" onclick="document.getElementById('f-in').click()">📷 選擇照片</button>
@@ -41,7 +41,7 @@
         <div class="input-style">
             <div id="focus-tag">設定姓名</div>
             <label>字體大小</label>
-            <select id="v-size" onchange="update()"><option value="md">中</option><option value="lg">大</option><option value="xl">特大</option></select>
+            <select id="v-size" onchange="update()"><option value="md">中</option><option value="lg">大</option><option value="xl" selected>特大</option></select>
             <label>文字顏色</label>
             <input type="color" id="v-color" value="#333333" onchange="update()">
         </div>
@@ -58,6 +58,8 @@
 
 <div class="footer"><button id="go" class="btn-send" onclick="send()">🚀 傳送賀卡</button></div>
 
+<canvas id="comp-cvs" style="display:none;" width="800" height="520"></canvas>
+
 <script>
     const LIFF_ID = '2009222789-bvdxbeSL', CLOUD_NAME = 'dnwwaush7', UPLOAD_PRESET = 'ml_default';
     let cp, currentCtx = 'to', card = { to:'', msg:'', toS:'xl', msgS:'md', toC:'#333333', msgC:'#333333', img: 'https://res.cloudinary.com/dnwwaush7/image/upload/v1774012083/cdegpgigtlzghqnjoadb.jpg' };
@@ -72,20 +74,6 @@
         updateUI();
     }
 
-    async function downsize(b64) {
-        return new Promise(r => {
-            const i = new Image();
-            i.onload = () => {
-                const max = 1200; let w = i.width, h = i.height;
-                if (w > max) { h *= max / w; w = max; }
-                const c = document.createElement('canvas'); c.width = w; c.height = h;
-                c.getContext('2d').drawImage(i, 0, 0, w, h);
-                r(c.toDataURL('image/jpeg', 0.8));
-            };
-            i.src = b64;
-        });
-    }
-
     function setContext(ctx) {
         currentCtx = ctx;
         document.getElementById('focus-tag').innerText = ctx === 'to' ? '設定姓名' : '設定留言';
@@ -96,10 +84,8 @@
     function update() {
         card.to = document.getElementById('v-to').value;
         card.msg = document.getElementById('v-msg').value;
-        const s = document.getElementById('v-size').value;
-        const c = document.getElementById('v-color').value;
-        if (currentCtx === 'to') { card.toS = s; card.toC = c; }
-        else { card.msgS = s; card.msgC = c; }
+        if (currentCtx === 'to') { card.toS = document.getElementById('v-size').value; card.toC = document.getElementById('v-color').value; }
+        else { card.msgS = document.getElementById('v-size').value; card.msgC = document.getElementById('v-color').value; }
         updateUI();
     }
 
@@ -107,70 +93,63 @@
         const t = document.getElementById('p-to'), m = document.getElementById('p-msg');
         t.innerText = card.to || "名字";
         t.style.color = card.toC;
-        t.style.fontSize = { md:'16px', lg:'20px', xl:'24px' }[card.toS];
+        t.style.fontSize = { md:'18px', lg:'24px', xl:'30px' }[card.toS];
         m.innerText = card.msg || "祝福內容";
         m.style.color = card.msgC;
-        m.style.fontSize = { md:'14px', lg:'17px', xl:'21px' }[card.msgS];
+        m.style.fontSize = { md:'14px', lg:'18px', xl:'22px' }[card.msgS];
     }
 
     function handleFile(input) {
         if (input.files && input.files[0]) {
             const r = new FileReader();
-            r.onload = async e => {
-                const small = await downsize(e.target.result);
-                cp.bind({ url: small });
-            };
+            r.onload = e => cp.bind({ url: e.target.result });
             r.readAsDataURL(input.files[0]);
         }
     }
 
     async function send() {
-        const b = document.getElementById('go'); b.disabled = true; b.innerText = "傳送中...";
+        const b = document.getElementById('go'); b.disabled = true; b.innerText = "合成中...";
         try {
-            // 裁切並上傳
-            const blob = await cp.result({ type: 'blob', size: { width: 800 }, format: 'jpeg' });
+            // 1. 取得裁切圖
+            const cropB64 = await cp.result({ type: 'base64', size: { width: 800 }, format: 'jpeg', quality: 0.9 });
+            
+            // 2. 使用 Canvas 燒錄文字
+            const canvas = document.getElementById('comp-cvs');
+            const ctx = canvas.getContext('2d');
+            const img = new Image();
+            await new Promise(r => { img.onload = r; img.src = cropB64; });
+            
+            ctx.drawImage(img, 0, 0, 800, 520);
+            
+            // 姓名燒錄
+            const toSize = { md:36, lg:48, xl:60 }[card.toS];
+            ctx.font = `bold ${toSize}px "Noto Sans TC", sans-serif`;
+            ctx.fillStyle = card.toC;
+            ctx.shadowColor = "rgba(255,255,255,0.8)"; ctx.shadowBlur = 10;
+            ctx.fillText(card.to || "親愛的朋友", 40, 420);
+            
+            // 訊息燒錄
+            const msgSize = { md:28, lg:36, xl:44 }[card.msgS];
+            ctx.font = `${msgSize}px "Noto Sans TC", sans-serif`;
+            ctx.fillStyle = card.msgC;
+            ctx.fillText(card.msg || "祝你有個美好的一天！", 40, 475);
+            
+            // 3. 轉成 Blob 並上傳
+            b.innerText = "上傳中...";
+            const finalBlob = await new Promise(r => canvas.toBlob(r, 'image/jpeg', 0.85));
             const fd = new FormData();
-            fd.append('file', blob);
+            fd.append('file', finalBlob);
             fd.append('upload_preset', UPLOAD_PRESET);
             const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`, { method: 'POST', body: fd });
             const d = await res.json();
             
-            // 修正後的 Flex Message：改回 hero 模式但加上 overlay 嘗試，或純 body 絕對定位優化
+            // 4. 發送純圖片 Flex (最穩定)
             await liff.shareTargetPicker([{
                 "type": "flex", "altText": "收到一份白六賀卡！",
                 "contents": {
-                    "type": "bubble",
-                    "size": "mega",
-                    "body": {
-                        "type": "box", "layout": "vertical", "paddingAll": "0px",
-                        "contents": [
-                            {
-                                "type": "image",
-                                "url": d.secure_url,
-                                "size": "full",
-                                "aspectRatio": "20:13",
-                                "aspectMode": "cover"
-                            },
-                            {
-                                "type": "box",
-                                "layout": "vertical",
-                                "position": "absolute",
-                                "offsetBottom": "0px",
-                                "offsetStart": "0px",
-                                "offsetEnd": "0px",
-                                "paddingAll": "20px",
-                                "background": {
-                                    "type": "linearGradient",
-                                    "angle": "0deg",
-                                    "startColor": "#00000088",
-                                    "endColor": "#00000000"
-                                },
-                                "contents": [
-                                    { "type": "text", "text": card.to || "親愛的朋友", "weight": "bold", "size": card.toS, "color": card.toC },
-                                    { "type": "text", "text": card.msg || "祝你有個美好的一天！", "wrap": true, "size": card.msgS === 'xl' ? 'lg' : card.msgS, "color": card.msgC, "margin": "sm" }
-                                ]
-                            }
-                        ]
+                    "type": "bubble", "size": "mega",
+                    "hero": { "type": "image", "url": d.secure_url, "size": "full", "aspectRatio": "20:13", "aspectMode": "cover",
+                        "action": { "type": "uri", "uri": d.secure_url } 
                     },
                     "footer": {
                         "type": "box", "layout": "horizontal", "contents": [
@@ -180,7 +159,7 @@
                 }
             }]);
             liff.closeWindow();
-        } catch (e) { b.disabled = false; b.innerText = "🚀 傳送賀卡"; alert("傳送失敗，請稍後再試"); }
+        } catch (e) { b.disabled = false; b.innerText = "🚀 傳送賀卡"; alert("系統忙碌，請重新點擊送出"); }
     }
     init();
 </script>
