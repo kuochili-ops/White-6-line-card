@@ -125,8 +125,9 @@
     }
 
     async function send() {
-        const b = document.getElementById('go'); b.disabled = true; b.innerText = "處理中...";
+        const b = document.getElementById('go'); b.disabled = true; b.innerText = "傳送中...";
         try {
+            // 裁切並上傳
             const blob = await cp.result({ type: 'blob', size: { width: 800 }, format: 'jpeg' });
             const fd = new FormData();
             fd.append('file', blob);
@@ -134,26 +135,39 @@
             const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`, { method: 'POST', body: fd });
             const d = await res.json();
             
-            // 方法一核心：使用 Box Layering 將文字壓在圖片上
+            // 修正後的 Flex Message：改回 hero 模式但加上 overlay 嘗試，或純 body 絕對定位優化
             await liff.shareTargetPicker([{
                 "type": "flex", "altText": "收到一份白六賀卡！",
                 "contents": {
-                    "type": "bubble", "size": "mega",
+                    "type": "bubble",
+                    "size": "mega",
                     "body": {
                         "type": "box", "layout": "vertical", "paddingAll": "0px",
                         "contents": [
-                            { "type": "image", "url": d.secure_url, "size": "full", "aspectRatio": "20:13", "aspectMode": "cover" },
                             {
-                                "type": "box", "layout": "vertical", "position": "absolute", "offsetBottom": "12%", "offsetStart": "20px", "offsetEnd": "20px",
+                                "type": "image",
+                                "url": d.secure_url,
+                                "size": "full",
+                                "aspectRatio": "20:13",
+                                "aspectMode": "cover"
+                            },
+                            {
+                                "type": "box",
+                                "layout": "vertical",
+                                "position": "absolute",
+                                "offsetBottom": "0px",
+                                "offsetStart": "0px",
+                                "offsetEnd": "0px",
+                                "paddingAll": "20px",
+                                "background": {
+                                    "type": "linearGradient",
+                                    "angle": "0deg",
+                                    "startColor": "#00000088",
+                                    "endColor": "#00000000"
+                                },
                                 "contents": [
                                     { "type": "text", "text": card.to || "親愛的朋友", "weight": "bold", "size": card.toS, "color": card.toC },
                                     { "type": "text", "text": card.msg || "祝你有個美好的一天！", "wrap": true, "size": card.msgS === 'xl' ? 'lg' : card.msgS, "color": card.msgC, "margin": "sm" }
-                                ]
-                            },
-                            {
-                                "type": "box", "layout": "vertical", "position": "absolute", "paddingAll": "5px", "offsetTop": "10px", "offsetStart": "10px",
-                                "contents": [
-                                    { "type": "text", "text": "𓃥 白六賀卡", "weight": "bold", "color": "#ffffff", "size": "xxs", "shadow": { "radius": "2px", "color": "#000000", "offsetX": "1px", "offsetY": "1px" } }
                                 ]
                             }
                         ]
@@ -166,7 +180,7 @@
                 }
             }]);
             liff.closeWindow();
-        } catch (e) { b.disabled = false; b.innerText = "🚀 傳送賀卡"; }
+        } catch (e) { b.disabled = false; b.innerText = "🚀 傳送賀卡"; alert("傳送失敗，請稍後再試"); }
     }
     init();
 </script>
