@@ -28,7 +28,6 @@
 
 <div class="container">
     <div style="padding:5px;"><span style="font-weight:900; color:#00b900;">𓃥 白六賀卡·穩定版</span></div>
-
     <div class="editor-box">
         <div class="input-main">
             <label>姓名</label>
@@ -46,7 +45,6 @@
             <input type="color" id="v-color" value="#333333" onchange="update()">
         </div>
     </div>
-
     <div class="stage">
         <div id="cp-wrap"></div>
         <div class="overlay">
@@ -57,23 +55,30 @@
 </div>
 
 <div class="footer"><button id="go" class="btn-send" onclick="send()">🚀 傳送賀卡</button></div>
-
 <canvas id="comp-cvs" style="display:none;" width="800" height="520"></canvas>
 
 <script>
-    const LIFF_ID = '2009222789-bvdxbeSL', CLOUD_NAME = 'dnwwaush7', UPLOAD_PRESET = 'ml_default';
+    // 已更新為截圖中的正確 ID
+    const LIFF_ID = '2009222789-kAJm4sds', CLOUD_NAME = 'dnwwaush7', UPLOAD_PRESET = 'ml_default';
     let cp, currentCtx = 'to', card = { to:'', msg:'', toS:'xl', msgS:'md', toC:'#333333', msgC:'#333333', img: 'https://res.cloudinary.com/dnwwaush7/image/upload/v1774012083/cdegpgigtlzghqnjoadb.jpg' };
 
     async function init() {
+        if (!window.liff) { setTimeout(init, 500); return; }
         try {
             await liff.init({ liffId: LIFF_ID });
-            cp = new Croppie(document.getElementById('cp-wrap'), {
-                viewport: { width: 300, height: 195, type: 'square' },
-                boundary: { width: '100%', height: '100%' }, showZoomer: false
-            });
-            cp.bind({ url: card.img });
-            updateUI();
-        } catch (e) { alert("LIFF 初始化失敗"); }
+            setupCroppie();
+        } catch (e) {
+            setTimeout(() => liff.init({ liffId: LIFF_ID }).then(setupCroppie).catch(err => alert("啟動失敗：" + err.message)), 1000);
+        }
+    }
+
+    function setupCroppie() {
+        cp = new Croppie(document.getElementById('cp-wrap'), {
+            viewport: { width: 300, height: 195, type: 'square' },
+            boundary: { width: '100%', height: '100%' }, showZoomer: false
+        });
+        cp.bind({ url: card.img });
+        updateUI();
     }
 
     function setContext(ctx) {
@@ -110,7 +115,8 @@
     }
 
     async function send() {
-        const b = document.getElementById('go'); b.disabled = true; b.innerText = "1.合成中...";
+        const b = document.getElementById('go'); 
+        b.disabled = true; b.innerText = "1.合成中...";
         try {
             const cropB64 = await cp.result({ type: 'base64', size: { width: 800 }, format: 'jpeg', quality: 0.9 });
             const canvas = document.getElementById('comp-cvs');
@@ -122,7 +128,7 @@
             const toSize = { md:36, lg:48, xl:60 }[card.toS];
             ctx.font = `bold ${toSize}px "Noto Sans TC", sans-serif`;
             ctx.fillStyle = card.toC;
-            ctx.shadowColor = "rgba(255,255,255,0.8)"; ctx.shadowBlur = 8;
+            ctx.shadowColor = "rgba(255,255,255,0.7)"; ctx.shadowBlur = 8;
             ctx.fillText(card.to || "親愛的朋友", 40, 420);
             
             const msgSize = { md:28, lg:36, xl:44 }[card.msgS];
@@ -132,40 +138,29 @@
             
             b.innerText = "2.上傳中...";
             const finalBlob = await new Promise(r => canvas.toBlob(r, 'image/jpeg', 0.85));
-            
-            // 重要：手動構造 FormData 並確保 URL 是正確的 HTTPS
             const fd = new FormData();
             fd.append('file', finalBlob, 'card.jpg');
             fd.append('upload_preset', UPLOAD_PRESET);
             
-            const response = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`, {
-                method: 'POST',
-                body: fd
-            });
-
-            if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(`Cloudinary Error: ${errorData.error.message}`);
-            }
-
+            const response = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`, { method: 'POST', body: fd });
+            if (!response.ok) throw new Error("上傳失敗");
             const d = await response.json();
-            b.innerText = "3.傳送中...";
             
+            b.innerText = "3.傳送中...";
             await liff.shareTargetPicker([{
                 "type": "flex", "altText": "收到一份白六賀卡！",
                 "contents": {
                     "type": "bubble", "size": "mega",
-                    "hero": { "type": "image", "url": d.secure_url, "size": "full", "aspectRatio": "20:13", "aspectMode": "cover", "action": { "type": "uri", "uri": d.secure_url } },
+                    "hero": { "type": "image", "url": d.secure_url, "size": "full", "aspectRatio": "20:13", "aspectMode": "cover" },
                     "footer": { "type": "box", "layout": "horizontal", "contents": [{ "type": "button", "style": "primary", "color": "#00b900", "height": "sm", "action": { "type": "uri", "label": "我也要送", "uri": `https://liff.line.me/${LIFF_ID}` } }] }
                 }
             }]);
             liff.closeWindow();
         } catch (e) { 
-            b.disabled = false; b.innerText = "🚀 傳送賀卡"; 
-            alert("錯誤原因：" + e.message); // 這行能幫我們精確抓到是哪一步斷掉
+            b.disabled = false; b.innerText = "🚀 傳送賀卡"; alert("提示：" + e.message);
         }
     }
-    init();
+    window.onload = init;
 </script>
 </body>
 </html>
