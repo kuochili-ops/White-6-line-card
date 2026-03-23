@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>𓃥 白六賀卡·高清版</title>
+    <title>𓃥 白六賀卡·高清多片版</title>
     <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/croppie/2.6.5/croppie.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/croppie/2.6.5/croppie.min.js"></script>
@@ -28,21 +28,21 @@
         .ctx-menu { display: none; position: fixed; background: white; border-radius: 12px; box-shadow: 0 5px 20px rgba(0,0,0,0.15); z-index: 2000; padding: 5px; min-width: 140px; }
         .ctx-menu button { display: block; width: 100%; text-align: left; background: none; border: none; padding: 12px 15px; font-size: 14px; cursor: pointer; border-radius: 8px; }
         .ctx-menu button.del { color: #ff4d4f; }
-        .locked-tag { position: absolute; top: 12px; right: 12px; background: rgba(0,185,0,0.85); color: white; padding: 4px 10px; border-radius: 20px; font-size: 11px; z-index: 20; pointer-events: none; font-weight: bold; }
+        .locked-tag { position: absolute; top: 12px; right: 12px; background: rgba(0,185,0,0.9); color: white; padding: 4px 10px; border-radius: 20px; font-size: 11px; z-index: 20; pointer-events: none; font-weight: bold; }
     </style>
 </head>
 <body>
 
-<div id="loader" class="loading-mask">✨ 正在進行高清處理...</div>
+<div id="loader" class="loading-mask">✨ 正在優化畫質...</div>
 
 <div id="thumb-menu" class="ctx-menu">
-    <button id="menu-replace">📷 更換/重裁照片</button>
-    <button id="menu-del" class="del">🗑️ 刪除這張卡片</button>
+    <button id="menu-replace">📷 更換/重新裁切</button>
+    <button id="menu-del" class="del">🗑️ 刪除卡片</button>
 </div>
 
 <div class="container">
     <div style="padding:5px; display:flex; justify-content:space-between; align-items:center;">
-        <span style="font-weight:900; color:#00b900;">𓃥 白六賀卡·高清強固版</span>
+        <span style="font-weight:900; color:#00b900;">𓃥 白六賀卡·高清鎖定版</span>
         <span id="pic-count" style="font-size:12px; color:#aaa;">1 / 1</span>
     </div>
 
@@ -67,7 +67,7 @@
     </div>
 
     <div class="stage">
-        <div id="status-tag" class="locked-tag" style="display:none;">🔒 圖片內容已完成</div>
+        <div id="status-tag" class="locked-tag" style="display:none;">🔒 圖片內容已封存</div>
         <div id="cp-wrap"></div>
         <div class="overlay">
             <span id="p-to" style="display:block; font-weight:bold;"></span>
@@ -91,16 +91,18 @@
             const p = new URLSearchParams(window.location.search);
             if (p.get('imgs')) {
                 isLockedMode = true;
-                const imgUrls = JSON.parse(decodeURIComponent(p.get('imgs')));
-                items = imgUrls.map(url => ({
+                const rawImgs = JSON.parse(decodeURIComponent(p.get('imgs')));
+                // 強制補全 https 並解決 CORS 問題
+                items = rawImgs.map(url => ({
                     to: p.get('to')||'', msg: p.get('msg')||'', 
                     toS: p.get('toS')||'xl', msgS: p.get('msgS')||'md', 
-                    toC: p.get('toC')||'#333333', msgC: p.get('msgC')||'#333333', img: url, isLocked: true
+                    toC: p.get('toC')||'#333333', msgC: p.get('msgC')||'#333333', 
+                    img: url.replace('http://', 'https://'), isLocked: true
                 }));
                 document.getElementById('btn-up-init').style.display = 'none';
             }
             setupCroppie(); renderThumbs(); setupMenu();
-        } catch (e) { console.error(e); }
+        } catch (e) { console.error("Init Error:", e); }
     }
 
     function setupCroppie() {
@@ -112,7 +114,13 @@
             showZoomer: !it.isLocked,
             enableOrientation: true
         });
-        cp.bind({ url: it.img });
+        
+        // 核心修正：加入 crossOrigin 解決 Cloudinary 載入權限問題
+        cp.bind({ 
+            url: it.img,
+            zoom: 1,
+            crossOrigin: 'anonymous' 
+        });
         
         const wrap = document.getElementById('cp-wrap');
         if(it.isLocked) {
@@ -145,9 +153,9 @@
 
     async function switchItem(idx) {
         if (idx === activeIdx) return;
-        // 切換時高清裁切並鎖定
         if (!items[activeIdx].isLocked && !isLockedMode) {
-            items[activeIdx].img = await cp.result({ type: 'base64', size: { width: 1200 }, format: 'jpeg', quality: 0.92 });
+            // 切換時執行高清裁切 (1200px)
+            items[activeIdx].img = await cp.result({ type: 'base64', size: { width: 1200 }, format: 'jpeg', quality: 0.9 });
             items[activeIdx].isLocked = true;
         }
         activeIdx = idx;
@@ -193,12 +201,11 @@
             const img = new Image();
             img.onload = () => {
                 const cvs = document.createElement('canvas');
-                // 提高原始解析度限制
                 let w = img.width, h = img.height, max = 1600;
                 if (w > h && w > max) { h *= max/w; w = max; } else if (h > max) { w *= max/h; h = max; }
                 cvs.width = w; cvs.height = h;
                 cvs.getContext('2d').drawImage(img, 0, 0, w, h);
-                const slim = cvs.toDataURL('image/png'); // 暫存改用無損 PNG
+                const slim = cvs.toDataURL('image/jpeg', 0.95);
                 
                 if (isReplacing) {
                     items[menuIdx].img = slim; 
@@ -206,7 +213,7 @@
                     activeIdx = menuIdx; isReplacing = false;
                 } else {
                     if (!items[activeIdx].isLocked) {
-                        cp.result({ type: 'base64', size: { width: 1200 }, format: 'jpeg', quality: 0.92 }).then(res => {
+                        cp.result({ type: 'base64', size: { width: 1200 }, format: 'jpeg', quality: 0.9 }).then(res => {
                             items[activeIdx].img = res;
                             items[activeIdx].isLocked = true;
                             addNew(slim);
@@ -223,8 +230,6 @@
                     renderThumbs(); setupCroppie();
                     document.getElementById('loader').style.display = 'none';
                 }
-                renderThumbs(); setupCroppie();
-                document.getElementById('loader').style.display = 'none';
             };
             img.src = e.target.result;
         };
@@ -256,14 +261,13 @@
                 if (isLockedMode) {
                     finalImgs.push(items[i].img);
                 } else {
-                    if (!items[i].isLocked) { await switchItem(i); } // 切換邏輯內含高清裁切
-                    
+                    if (!items[i].isLocked) { await switchItem(i); } 
                     const blob = await fetch(items[i].img).then(r => r.blob());
                     const fd = new FormData();
                     fd.append('file', blob); fd.append('upload_preset', UPLOAD_PRESET);
                     const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`, { method: 'POST', body: fd });
                     const d = await res.json();
-                    finalImgs.push(d.secure_url);
+                    finalImgs.push(d.secure_url.replace('http://', 'https://'));
                 }
             }
             const f = items[0];
@@ -291,7 +295,7 @@
             }));
             await liff.shareTargetPicker([{ "type": "flex", "altText": "收到高清賀卡！", "contents": { "type": "carousel", "contents": bubbles } }]);
             liff.closeWindow();
-        } catch (e) { alert(e.message); b.disabled = false; document.getElementById('loader').style.display = 'none'; }
+        } catch (e) { alert("傳送失敗: " + e.message); b.disabled = false; document.getElementById('loader').style.display = 'none'; }
     }
     window.onload = init;
 </script>
