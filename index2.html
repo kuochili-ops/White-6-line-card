@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>𓃥 白六賀卡·多片強固版</title>
+    <title>𓃥 白六賀卡·高清版</title>
     <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/croppie/2.6.5/croppie.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/croppie/2.6.5/croppie.min.js"></script>
@@ -15,7 +15,7 @@
         .input-style { flex: 1.1; border-left: 2.5px solid #00b900; padding-left: 10px; }
         label { font-size: 10px; color: #bbb; font-weight: bold; display: block; margin-bottom: 2px; }
         input, textarea, select { width: 100%; padding: 7px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; box-sizing: border-box; margin-bottom: 5px; outline: none; }
-        .stage { margin: 10px 0; border: 4px solid #00b900; border-radius: 22px; overflow: hidden; position: relative; background: #333; aspect-ratio: 20/13; }
+        .stage { margin: 10px 0; border: 4px solid #00b900; border-radius: 22px; overflow: hidden; position: relative; background: #222; aspect-ratio: 20/13; }
         #cp-wrap { width: 100%; height: 100%; }
         .overlay { position: absolute; bottom: 12%; left: 20px; right: 20px; pointer-events: none; z-index: 10; text-shadow: 0 2px 8px rgba(255,255,255,0.8); }
         .btn-upload { width: 100%; padding: 12px; background: #00b900; color: white; border: none; border-radius: 12px; font-weight: bold; cursor: pointer; margin-top: 5px; }
@@ -24,25 +24,25 @@
         .thumb-list { display: flex; gap: 8px; overflow-x: auto; padding: 10px 0; margin-bottom: 5px; min-height: 50px; }
         .thumb { width: 60px; height: 40px; border-radius: 6px; border: 2px solid #ddd; cursor: pointer; object-fit: cover; flex-shrink: 0; background: #eee; }
         .thumb.active { border-color: #00b900; box-shadow: 0 0 5px rgba(0,185,0,0.5); }
-        .loading-mask { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(255,255,255,0.9); z-index:1000; flex-direction:column; justify-content:center; align-items:center; font-weight:bold; color:#00b900; }
-        .ctx-menu { display: none; position: fixed; background: white; border-radius: 12px; box-shadow: 0 5px 20px rgba(0,0,0,0.15); z-index: 2000; padding: 5px; min-width: 120px; }
+        .loading-mask { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(255,255,255,0.95); z-index:1000; flex-direction:column; justify-content:center; align-items:center; font-weight:bold; color:#00b900; }
+        .ctx-menu { display: none; position: fixed; background: white; border-radius: 12px; box-shadow: 0 5px 20px rgba(0,0,0,0.15); z-index: 2000; padding: 5px; min-width: 140px; }
         .ctx-menu button { display: block; width: 100%; text-align: left; background: none; border: none; padding: 12px 15px; font-size: 14px; cursor: pointer; border-radius: 8px; }
         .ctx-menu button.del { color: #ff4d4f; }
-        .locked-tag { position: absolute; top: 10px; right: 10px; background: rgba(0,0,0,0.6); color: white; padding: 2px 8px; border-radius: 20px; font-size: 10px; z-index: 20; pointer-events: none; }
+        .locked-tag { position: absolute; top: 12px; right: 12px; background: rgba(0,185,0,0.85); color: white; padding: 4px 10px; border-radius: 20px; font-size: 11px; z-index: 20; pointer-events: none; font-weight: bold; }
     </style>
 </head>
 <body>
 
-<div id="loader" class="loading-mask">🪄 圖片處理中...</div>
+<div id="loader" class="loading-mask">✨ 正在進行高清處理...</div>
 
 <div id="thumb-menu" class="ctx-menu">
-    <button id="menu-replace">📷 更換照片 (解鎖編輯)</button>
-    <button id="menu-del" class="del">🗑️ 刪除卡片</button>
+    <button id="menu-replace">📷 更換/重裁照片</button>
+    <button id="menu-del" class="del">🗑️ 刪除這張卡片</button>
 </div>
 
 <div class="container">
     <div style="padding:5px; display:flex; justify-content:space-between; align-items:center;">
-        <span style="font-weight:900; color:#00b900;">𓃥 白六賀卡·多片強固版</span>
+        <span style="font-weight:900; color:#00b900;">𓃥 白六賀卡·高清強固版</span>
         <span id="pic-count" style="font-size:12px; color:#aaa;">1 / 1</span>
     </div>
 
@@ -67,7 +67,7 @@
     </div>
 
     <div class="stage">
-        <div id="status-tag" class="locked-tag" style="display:none;">🔒 圖片已鎖定</div>
+        <div id="status-tag" class="locked-tag" style="display:none;">🔒 圖片內容已完成</div>
         <div id="cp-wrap"></div>
         <div class="overlay">
             <span id="p-to" style="display:block; font-weight:bold;"></span>
@@ -76,13 +76,12 @@
     </div>
 </div>
 
-<div class="footer"><button id="go" class="btn-send" onclick="send()">🚀 傳送賀卡</button></div>
+<div class="footer"><button id="go" class="btn-send" onclick="send()">🚀 傳送高清賀卡</button></div>
 
 <script>
     const LIFF_ID = '2009222789-bvdxbeSL', CLOUD_NAME = 'dnwwaush7', UPLOAD_PRESET = 'ml_default';
     let cp, activeIdx = 0, currentCtx = 'to', isLockedMode = false, isReplacing = false, menuIdx = -1;
     
-    // items 新增 isLocked 屬性，標記該照片是否已完成裁切
     let items = [{ to:'', msg:'', toS:'xl', msgS:'md', toC:'#333333', msgC:'#333333', img: 'https://res.cloudinary.com/dnwwaush7/image/upload/v1774012083/cdegpgigtlzghqnjoadb.jpg', isLocked: false }];
 
     async function init() {
@@ -91,7 +90,7 @@
             if (!liff.isLoggedIn()) { liff.login(); return; }
             const p = new URLSearchParams(window.location.search);
             if (p.get('imgs')) {
-                isLockedMode = true; // 收到賀卡模式全鎖定
+                isLockedMode = true;
                 const imgUrls = JSON.parse(decodeURIComponent(p.get('imgs')));
                 items = imgUrls.map(url => ({
                     to: p.get('to')||'', msg: p.get('msg')||'', 
@@ -101,7 +100,7 @@
                 document.getElementById('btn-up-init').style.display = 'none';
             }
             setupCroppie(); renderThumbs(); setupMenu();
-        } catch (e) { alert("啟動錯誤: " + e.message); }
+        } catch (e) { console.error(e); }
     }
 
     function setupCroppie() {
@@ -110,12 +109,11 @@
         cp = new Croppie(document.getElementById('cp-wrap'), {
             viewport: { width: 300, height: 195, type: 'square' },
             boundary: { width: '100%', height: '100%' }, 
-            showZoomer: !it.isLocked, // 鎖定時不顯示縮放條
+            showZoomer: !it.isLocked,
             enableOrientation: true
         });
         cp.bind({ url: it.img });
         
-        // 如果已鎖定，禁止滑動編輯
         const wrap = document.getElementById('cp-wrap');
         if(it.isLocked) {
             wrap.style.pointerEvents = 'none';
@@ -147,22 +145,20 @@
 
     async function switchItem(idx) {
         if (idx === activeIdx) return;
-        // 切換前：如果是從編輯狀態切換走，則將該張「鎖定」
+        // 切換時高清裁切並鎖定
         if (!items[activeIdx].isLocked && !isLockedMode) {
-            items[activeIdx].img = await cp.result({ type: 'base64', size: 'viewport', format: 'jpeg', quality: 0.8 });
+            items[activeIdx].img = await cp.result({ type: 'base64', size: { width: 1200 }, format: 'jpeg', quality: 0.92 });
             items[activeIdx].isLocked = true;
         }
         activeIdx = idx;
         const it = items[idx];
         document.getElementById('v-to').value = it.to;
         document.getElementById('v-msg').value = it.msg;
-        renderThumbs();
-        setupCroppie();
+        renderThumbs(); setupCroppie();
     }
 
     function setupMenu() {
         const menu = document.getElementById('thumb-menu');
-        // 更換照片 = 解鎖該張圖片重新裁切
         document.getElementById('menu-replace').onclick = () => { 
             items[menuIdx].isLocked = false; 
             isReplacing = true; 
@@ -197,30 +193,29 @@
             const img = new Image();
             img.onload = () => {
                 const cvs = document.createElement('canvas');
-                let w = img.width, h = img.height, max = 1000;
+                // 提高原始解析度限制
+                let w = img.width, h = img.height, max = 1600;
                 if (w > h && w > max) { h *= max/w; w = max; } else if (h > max) { w *= max/h; h = max; }
                 cvs.width = w; cvs.height = h;
                 cvs.getContext('2d').drawImage(img, 0, 0, w, h);
-                const slim = cvs.toDataURL('image/jpeg', 0.8);
+                const slim = cvs.toDataURL('image/png'); // 暫存改用無損 PNG
                 
                 if (isReplacing) {
                     items[menuIdx].img = slim; 
-                    items[menuIdx].isLocked = false; // 新換上來的圖要解鎖編輯
-                    activeIdx = menuIdx; 
-                    isReplacing = false;
+                    items[menuIdx].isLocked = false;
+                    activeIdx = menuIdx; isReplacing = false;
                 } else {
-                    // 新增照片時，先將當前這張鎖定
                     if (!items[activeIdx].isLocked) {
-                        cp.result({ type: 'base64', size: 'viewport', format: 'jpeg', quality: 0.8 }).then(res => {
+                        cp.result({ type: 'base64', size: { width: 1200 }, format: 'jpeg', quality: 0.92 }).then(res => {
                             items[activeIdx].img = res;
                             items[activeIdx].isLocked = true;
-                            addNewCard(slim);
+                            addNew(slim);
                         });
                         return;
                     }
-                    addNewCard(slim);
+                    addNew(slim);
                 }
-                function addNewCard(src) {
+                function addNew(src) {
                     if (items.length < 10) {
                         items.push({ ...items[activeIdx], img: src, to: '', msg: '', isLocked: false });
                         activeIdx = items.length - 1;
@@ -261,12 +256,8 @@
                 if (isLockedMode) {
                     finalImgs.push(items[i].img);
                 } else {
-                    // 最終確認：如果尚未轉換成最終裁切圖，則執行轉換
-                    let output;
-                    if (!items[i].isLocked) {
-                        await switchItem(i); // 切換會觸發自動鎖定與裁切
-                    }
-                    // 將 base64 或 網址轉為 blob 上傳
+                    if (!items[i].isLocked) { await switchItem(i); } // 切換邏輯內含高清裁切
+                    
                     const blob = await fetch(items[i].img).then(r => r.blob());
                     const fd = new FormData();
                     fd.append('file', blob); fd.append('upload_preset', UPLOAD_PRESET);
@@ -298,7 +289,7 @@
                     { "type": "button", "style": "primary", "height": "sm", "color": "#00b900", "action": { "type": "uri", "label": "快速轉傳", "uri": shareUrl } }
                 ]}
             }));
-            await liff.shareTargetPicker([{ "type": "flex", "altText": "收到賀卡！", "contents": { "type": "carousel", "contents": bubbles } }]);
+            await liff.shareTargetPicker([{ "type": "flex", "altText": "收到高清賀卡！", "contents": { "type": "carousel", "contents": bubbles } }]);
             liff.closeWindow();
         } catch (e) { alert(e.message); b.disabled = false; document.getElementById('loader').style.display = 'none'; }
     }
