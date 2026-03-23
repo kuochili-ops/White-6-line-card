@@ -8,26 +8,25 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/croppie/2.6.5/croppie.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/croppie/2.6.5/croppie.min.js"></script>
     <style>
-        body { font-family: -apple-system, "Noto Sans TC", sans-serif; background-color: #f2f4f7; margin: 0; padding: 10px; padding-bottom: 120px; }
+        body { font-family: -apple-system, "Noto Sans TC", sans-serif; background-color: #f2f4f7; margin: 0; padding: 10px; padding-bottom: 120px; -webkit-tap-highlight-color: transparent; }
         .container { max-width: 500px; margin: 0 auto; background: white; padding: 15px; border-radius: 28px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); }
         .editor-box { display: flex; gap: 10px; margin-bottom: 12px; background: #fafafa; padding: 12px; border-radius: 20px; border: 1px solid #eee; }
         .input-main { flex: 2; }
         .input-style { flex: 1.1; border-left: 2.5px solid #00b900; padding-left: 10px; }
         label { font-size: 10px; color: #bbb; font-weight: bold; display: block; margin-bottom: 2px; }
         input, textarea, select { width: 100%; padding: 7px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; box-sizing: border-box; margin-bottom: 5px; outline: none; }
-        .stage { margin: 10px 0; border: 4px solid #00b900; border-radius: 22px; overflow: hidden; position: relative; background: #333; aspect-ratio: 20:13; }
+        .stage { margin: 10px 0; border: 4px solid #00b900; border-radius: 22px; overflow: hidden; position: relative; background: #333; aspect-ratio: 20/13; }
         #cp-wrap { width: 100%; height: 100%; }
         .overlay { position: absolute; bottom: 12%; left: 20px; right: 20px; pointer-events: none; z-index: 10; text-shadow: 0 2px 8px rgba(255,255,255,0.8); }
         .btn-upload { width: 100%; padding: 12px; background: #00b900; color: white; border: none; border-radius: 12px; font-weight: bold; cursor: pointer; margin-top: 5px; }
         .footer { position: fixed; bottom: 0; left: 0; right: 0; padding: 15px; background: white; text-align: center; z-index: 900; border-top: 1px solid #eee; }
         .btn-send { width: 100%; max-width: 450px; background: #00b900; color: white; border: none; padding: 18px; border-radius: 20px; font-size: 19px; font-weight: bold; }
         .thumb-list { display: flex; gap: 8px; overflow-x: auto; padding: 10px 0; margin-bottom: 5px; min-height: 50px; }
-        .thumb { width: 60px; height: 40px; border-radius: 6px; border: 2px solid #ddd; cursor: pointer; object-fit: cover; flex-shrink: 0; background: #eee; transition: 0.2s; }
-        .thumb.active { border-color: #00b900; box-shadow: 0 0 5px rgba(0,185,0,0.5); transform: scale(1.05); }
+        .thumb { width: 60px; height: 40px; border-radius: 6px; border: 2px solid #ddd; cursor: pointer; object-fit: cover; flex-shrink: 0; background: #eee; }
+        .thumb.active { border-color: #00b900; box-shadow: 0 0 5px rgba(0,185,0,0.5); }
         .loading-mask { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(255,255,255,0.9); z-index:1000; flex-direction:column; justify-content:center; align-items:center; font-weight:bold; color:#00b900; }
-        .ctx-menu { display: none; position: fixed; background: white; border-radius: 12px; box-shadow: 0 5px 20px rgba(0,0,0,0.15); z-index: 2000; padding: 5px; }
-        .ctx-menu button { display: block; width: 100%; text-align: left; background: none; border: none; padding: 10px 15px; font-size: 14px; cursor: pointer; border-radius: 8px; }
-        .ctx-menu button:hover { background-color: #f5f5f5; }
+        .ctx-menu { display: none; position: fixed; background: white; border-radius: 12px; box-shadow: 0 5px 20px rgba(0,0,0,0.15); z-index: 2000; padding: 5px; min-width: 120px; }
+        .ctx-menu button { display: block; width: 100%; text-align: left; background: none; border: none; padding: 12px 15px; font-size: 14px; cursor: pointer; border-radius: 8px; }
         .ctx-menu button.del { color: #ff4d4f; }
     </style>
 </head>
@@ -42,7 +41,7 @@
 
 <div class="container">
     <div style="padding:5px; display:flex; justify-content:space-between; align-items:center;">
-        <span style="font-weight:900; color:#00b900;">𓃥 白六賀卡·旗艦版</span>
+        <span style="font-weight:900; color:#00b900;">𓃥 白六賀卡·終極版</span>
         <span id="pic-count" style="font-size:12px; color:#aaa;">1 / 1</span>
     </div>
 
@@ -78,33 +77,33 @@
 <div class="footer"><button id="go" class="btn-send" onclick="send()">🚀 傳送賀卡</button></div>
 
 <script>
-    const LIFF_ID = '2009222789-bvdxbeSL', CLOUD_NAME = 'dnwwaush7', UPLOAD_PRESET = 'ml_default';
-    let cp, activeIdx = 0, currentCtx = 'to', isLocked = false, isReplacing = false;
-    // 預設不放任何文字內容
+    // 根據截圖修正 ID
+    const LIFF_ID = '2009222789-kAJm4sds', CLOUD_NAME = 'dnwwaush7', UPLOAD_PRESET = 'ml_default';
+    let cp, activeIdx = 0, currentCtx = 'to', isLocked = false, isReplacing = false, menuIdx = -1;
+    
     let items = [{ to:'', msg:'', toS:'xl', msgS:'md', toC:'#333333', msgC:'#333333', img: 'https://res.cloudinary.com/dnwwaush7/image/upload/v1774012083/cdegpgigtlzghqnjoadb.jpg' }];
 
     async function init() {
         try {
             await liff.init({ liffId: LIFF_ID });
-            const p = new URLSearchParams(window.location.search);
-            const rawImgs = p.get('imgs');
+            if (!liff.isLoggedIn()) { liff.login(); return; }
             
-            if (rawImgs) {
+            const p = new URLSearchParams(window.location.search);
+            if (p.get('imgs')) {
                 isLocked = true;
-                const imgUrls = JSON.parse(decodeURIComponent(rawImgs));
+                const imgUrls = JSON.parse(decodeURIComponent(p.get('imgs')));
                 items = imgUrls.map(url => ({
                     to: p.get('to')||'', msg: p.get('msg')||'', 
                     toS: p.get('toS')||'xl', msgS: p.get('msgS')||'md', 
                     toC: p.get('toC')||'#333333', msgC: p.get('msgC')||'#333333', img: url
                 }));
                 document.getElementById('btn-up-init').style.display = 'none';
-                document.getElementById('v-to').value = items[0].to;
-                document.getElementById('v-msg').value = items[0].msg;
             }
+            
             setupCroppie();
             renderThumbs();
             setupMenu();
-        } catch (e) { console.error(e); }
+        } catch (e) { alert("LIFF 初始化錯誤: " + e.message); }
     }
 
     function setupCroppie() {
@@ -115,7 +114,6 @@
             showZoomer: !isLocked,
             enableOrientation: true
         });
-        // 關鍵：bind 時確保圖片來源不污染畫布
         cp.bind({ url: items[activeIdx].img });
         updateUI();
     }
@@ -126,7 +124,7 @@
         
         document.querySelectorAll('.thumb').forEach(thumb => {
             let timer = null;
-            thumb.addEventListener('click', (e) => {
+            thumb.onclick = (e) => {
                 const idx = parseInt(e.target.dataset.index);
                 if (timer) {
                     clearTimeout(timer); timer = null;
@@ -134,7 +132,7 @@
                 } else {
                     timer = setTimeout(() => { switchItem(idx); timer = null; }, 250);
                 }
-            });
+            };
         });
         document.getElementById('pic-count').innerText = `${activeIdx + 1} / ${items.length}`;
     }
@@ -142,8 +140,8 @@
     async function switchItem(idx) {
         if (idx === activeIdx) return;
         if (!isLocked) {
-            // 修正：保存時強制使用 jpeg 格式並確保畫布權限
-            items[activeIdx].img = await cp.result({ type: 'base64', size: 'viewport', format: 'jpeg' });
+            // 保存當前裁切結果
+            items[activeIdx].img = await cp.result({ type: 'base64', size: 'viewport', format: 'jpeg', quality: 0.8 });
         }
         activeIdx = idx;
         const it = items[idx];
@@ -167,12 +165,11 @@
         document.addEventListener('click', (e) => { if (!menu.contains(e.target)) hideContextMenu(); });
     }
 
-    let menuIdx = -1;
     function showContextMenu(e, idx) {
         menuIdx = idx;
         const menu = document.getElementById('thumb-menu');
         menu.style.display = 'block';
-        menu.style.top = `${e.clientY - 50}px`; menu.style.left = `${e.clientX}px`;
+        menu.style.top = `${e.clientY - 60}px`; menu.style.left = `${Math.min(e.clientX, window.innerWidth - 130)}px`;
         e.stopPropagation();
     }
     function hideContextMenu() { document.getElementById('thumb-menu').style.display = 'none'; }
@@ -184,8 +181,6 @@
         const reader = new FileReader();
         reader.onload = (e) => {
             const img = new Image();
-            // 修正：本地圖片處理同樣加上 anonymous 屬性預防萬一
-            img.crossOrigin = "anonymous";
             img.onload = () => {
                 const cvs = document.createElement('canvas');
                 let w = img.width, h = img.height, max = 1000;
@@ -193,7 +188,6 @@
                 cvs.width = w; cvs.height = h;
                 const ctx = cvs.getContext('2d');
                 ctx.drawImage(img, 0, 0, w, h);
-                // 修正：明確指定輸出格式避免透明度導致的黑底問題
                 const slim = cvs.toDataURL('image/jpeg', 0.8);
                 
                 if (isReplacing) {
@@ -238,12 +232,13 @@
                     finalImgs.push(items[i].img);
                 } else {
                     await switchItem(i);
-                    // 修正：最終傳送的結果明確轉為 blob jpeg
+                    // 關鍵修正：最終傳送確保轉換為高品質 JPEG Blob
                     const blob = await cp.result({ type: 'blob', size: { width: 800 }, format: 'jpeg', quality: 0.8 });
                     const fd = new FormData();
                     fd.append('file', blob); fd.append('upload_preset', UPLOAD_PRESET);
                     const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`, { method: 'POST', body: fd });
                     const d = await res.json();
+                    if(!d.secure_url) throw new Error("圖片上傳失敗，請檢查網路");
                     finalImgs.push(d.secure_url);
                 }
             }
