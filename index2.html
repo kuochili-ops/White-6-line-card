@@ -3,46 +3,62 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>𓃥 白六賀卡·單張強固版</title>
+    <title>𓃥 白六賀卡·多片強固版</title>
     <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/croppie/2.6.5/croppie.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/croppie/2.6.5/croppie.min.js"></script>
     <style>
-        body { font-family: -apple-system, "Noto Sans TC", sans-serif; background-color: #f2f4f7; margin: 0; padding: 10px; padding-bottom: 100px; }
+        body { font-family: -apple-system, "Noto Sans TC", sans-serif; background-color: #f2f4f7; margin: 0; padding: 10px; padding-bottom: 120px; -webkit-tap-highlight-color: transparent; }
         .container { max-width: 500px; margin: 0 auto; background: white; padding: 15px; border-radius: 28px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); }
         .editor-box { display: flex; gap: 10px; margin-bottom: 12px; background: #fafafa; padding: 12px; border-radius: 20px; border: 1px solid #eee; }
         .input-main { flex: 2; }
         .input-style { flex: 1.1; border-left: 2.5px solid #00b900; padding-left: 10px; }
         label { font-size: 10px; color: #bbb; font-weight: bold; display: block; margin-bottom: 2px; }
-        #focus-tag { font-size: 11px; color: #00b900; margin-bottom: 5px; font-weight: 900; }
         input, textarea, select { width: 100%; padding: 7px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; box-sizing: border-box; margin-bottom: 5px; outline: none; }
-        .stage { margin: 10px 0; border: 4px solid #00b900; border-radius: 22px; overflow: hidden; position: relative; background: #000; aspect-ratio: 20/13; }
+        .stage { margin: 10px 0; border: 4px solid #00b900; border-radius: 22px; overflow: hidden; position: relative; background: #333; aspect-ratio: 20/13; }
         #cp-wrap { width: 100%; height: 100%; }
         .overlay { position: absolute; bottom: 12%; left: 20px; right: 20px; pointer-events: none; z-index: 10; text-shadow: 0 2px 8px rgba(255,255,255,0.8); }
-        .btn-upload { width: 100%; padding: 12px; background: #f0f0f0; border: 2px dashed #ccc; border-radius: 12px; color: #666; font-weight: bold; cursor: pointer; margin-top: 5px; }
-        .footer { position: fixed; bottom: 0; left: 0; right: 0; padding: 15px; background: white; text-align: center; z-index: 900; }
+        .btn-upload { width: 100%; padding: 12px; background: #00b900; color: white; border: none; border-radius: 12px; font-weight: bold; cursor: pointer; margin-top: 5px; }
+        .footer { position: fixed; bottom: 0; left: 0; right: 0; padding: 15px; background: white; text-align: center; z-index: 900; border-top: 1px solid #eee; }
         .btn-send { width: 100%; max-width: 450px; background: #00b900; color: white; border: none; padding: 18px; border-radius: 20px; font-size: 19px; font-weight: bold; }
-        /* 鎖定狀態的 Croppie 遮罩 */
-        .cp-locked { pointer-events: none; opacity: 0.8; }
+        .thumb-list { display: flex; gap: 8px; overflow-x: auto; padding: 10px 0; margin-bottom: 5px; min-height: 50px; }
+        .thumb { width: 60px; height: 40px; border-radius: 6px; border: 2px solid #ddd; cursor: pointer; object-fit: cover; flex-shrink: 0; background: #eee; }
+        .thumb.active { border-color: #00b900; box-shadow: 0 0 5px rgba(0,185,0,0.5); }
+        .loading-mask { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(255,255,255,0.9); z-index:1000; flex-direction:column; justify-content:center; align-items:center; font-weight:bold; color:#00b900; }
+        .ctx-menu { display: none; position: fixed; background: white; border-radius: 12px; box-shadow: 0 5px 20px rgba(0,0,0,0.15); z-index: 2000; padding: 5px; min-width: 120px; }
+        .ctx-menu button { display: block; width: 100%; text-align: left; background: none; border: none; padding: 12px 15px; font-size: 14px; cursor: pointer; border-radius: 8px; }
+        .ctx-menu button.del { color: #ff4d4f; }
+        .locked-tag { position: absolute; top: 10px; right: 10px; background: rgba(0,0,0,0.6); color: white; padding: 2px 8px; border-radius: 20px; font-size: 10px; z-index: 20; pointer-events: none; }
     </style>
 </head>
 <body>
 
+<div id="loader" class="loading-mask">🪄 圖片處理中...</div>
+
+<div id="thumb-menu" class="ctx-menu">
+    <button id="menu-replace">📷 更換照片 (解鎖編輯)</button>
+    <button id="menu-del" class="del">🗑️ 刪除卡片</button>
+</div>
+
 <div class="container">
-    <div style="padding:5px;"><span style="font-weight:900; color:#00b900;">𓃥 白六賀卡·單張強固版</span></div>
+    <div style="padding:5px; display:flex; justify-content:space-between; align-items:center;">
+        <span style="font-weight:900; color:#00b900;">𓃥 白六賀卡·多片強固版</span>
+        <span id="pic-count" style="font-size:12px; color:#aaa;">1 / 1</span>
+    </div>
+
+    <div class="thumb-list" id="thumb-container"></div>
 
     <div class="editor-box">
         <div class="input-main">
             <label>姓名</label>
-            <input type="text" id="v-to" placeholder="名字" oninput="update()" onfocus="setContext('to')">
+            <input type="text" id="v-to" placeholder="請輸入姓名" oninput="update()" onfocus="setCtx('to')">
             <label>祝福</label>
-            <textarea id="v-msg" rows="2" placeholder="內容" oninput="update()" onfocus="setContext('msg')"></textarea>
-            
-            <button id="btn-up" class="btn-upload" onclick="document.getElementById('f-in').click()">📷 新增照片 (確定後鎖定圖)</button>
+            <textarea id="v-msg" rows="2" placeholder="請輸入祝福內容" oninput="update()" onfocus="setCtx('msg')"></textarea>
+            <button id="btn-up-init" class="btn-upload" onclick="document.getElementById('f-in').click()">📷 新增照片</button>
             <input type="file" id="f-in" hidden accept="image/*" onchange="handleFile(this)">
         </div>
         <div class="input-style">
-            <div id="focus-tag">設定姓名</div>
+            <div id="focus-tag" style="font-size:11px; color:#00b900; margin-bottom:5px; font-weight:900;">設定姓名</div>
             <label>字體大小</label>
             <select id="v-size" onchange="update()"><option value="md">中</option><option value="lg">大</option><option value="xl" selected>特大</option></select>
             <label>顏色</label>
@@ -51,157 +67,240 @@
     </div>
 
     <div class="stage">
+        <div id="status-tag" class="locked-tag" style="display:none;">🔒 圖片已鎖定</div>
         <div id="cp-wrap"></div>
         <div class="overlay">
-            <span id="p-to" style="display:block; font-weight:bold;">名字</span>
-            <span id="p-msg" style="display:block;">祝福內容</span>
+            <span id="p-to" style="display:block; font-weight:bold;"></span>
+            <span id="p-msg" style="display:block;"></span>
         </div>
     </div>
 </div>
 
-<div class="footer"><button id="go" class="btn-send" onclick="send()">🚀 傳送強固賀卡</button></div>
+<div class="footer"><button id="go" class="btn-send" onclick="send()">🚀 傳送賀卡</button></div>
 
 <script>
     const LIFF_ID = '2009222789-bvdxbeSL', CLOUD_NAME = 'dnwwaush7', UPLOAD_PRESET = 'ml_default';
-    let cp, currentCtx = 'to', isImgLocked = false;
-    let card = { to:'', msg:'', toS:'xl', msgS:'md', toC:'#333333', msgC:'#333333', img: 'https://res.cloudinary.com/dnwwaush7/image/upload/v1774012083/cdegpgigtlzghqnjoadb.jpg' };
+    let cp, activeIdx = 0, currentCtx = 'to', isLockedMode = false, isReplacing = false, menuIdx = -1;
+    
+    // items 新增 isLocked 屬性，標記該照片是否已完成裁切
+    let items = [{ to:'', msg:'', toS:'xl', msgS:'md', toC:'#333333', msgC:'#333333', img: 'https://res.cloudinary.com/dnwwaush7/image/upload/v1774012083/cdegpgigtlzghqnjoadb.jpg', isLocked: false }];
 
     async function init() {
-        if (!window.liff) { setTimeout(init, 500); return; }
         try {
             await liff.init({ liffId: LIFF_ID });
-            setupCroppie();
-        } catch (e) { alert("LIFF 啟動失敗：" + e.message); }
+            if (!liff.isLoggedIn()) { liff.login(); return; }
+            const p = new URLSearchParams(window.location.search);
+            if (p.get('imgs')) {
+                isLockedMode = true; // 收到賀卡模式全鎖定
+                const imgUrls = JSON.parse(decodeURIComponent(p.get('imgs')));
+                items = imgUrls.map(url => ({
+                    to: p.get('to')||'', msg: p.get('msg')||'', 
+                    toS: p.get('toS')||'xl', msgS: p.get('msgS')||'md', 
+                    toC: p.get('toC')||'#333333', msgC: p.get('msgC')||'#333333', img: url, isLocked: true
+                }));
+                document.getElementById('btn-up-init').style.display = 'none';
+            }
+            setupCroppie(); renderThumbs(); setupMenu();
+        } catch (e) { alert("啟動錯誤: " + e.message); }
     }
 
     function setupCroppie() {
+        if(cp) cp.destroy();
+        const it = items[activeIdx];
         cp = new Croppie(document.getElementById('cp-wrap'), {
             viewport: { width: 300, height: 195, type: 'square' },
-            boundary: { width: '100%', height: '100%' }, showZoomer: false
+            boundary: { width: '100%', height: '100%' }, 
+            showZoomer: !it.isLocked, // 鎖定時不顯示縮放條
+            enableOrientation: true
         });
-        cp.bind({ url: card.img });
+        cp.bind({ url: it.img });
+        
+        // 如果已鎖定，禁止滑動編輯
+        const wrap = document.getElementById('cp-wrap');
+        if(it.isLocked) {
+            wrap.style.pointerEvents = 'none';
+            document.getElementById('status-tag').style.display = 'block';
+        } else {
+            wrap.style.pointerEvents = 'auto';
+            document.getElementById('status-tag').style.display = 'none';
+        }
         updateUI();
     }
 
-    function setContext(ctx) {
-        currentCtx = ctx;
-        document.getElementById('focus-tag').innerText = ctx === 'to' ? '設定姓名' : '設定留言';
-        document.getElementById('v-size').value = ctx === 'to' ? card.toS : card.msgS;
-        document.getElementById('v-color').value = ctx === 'to' ? card.toC : card.msgC;
+    function renderThumbs() {
+        const container = document.getElementById('thumb-container');
+        container.innerHTML = items.map((it, i) => `<img src="${it.img}" class="thumb ${i===activeIdx?'active':''}" data-index="${i}">`).join('');
+        document.querySelectorAll('.thumb').forEach(thumb => {
+            let timer = null;
+            thumb.onclick = (e) => {
+                const idx = parseInt(e.target.dataset.index);
+                if (timer) {
+                    clearTimeout(timer); timer = null;
+                    if (!isLockedMode) showContextMenu(e, idx);
+                } else {
+                    timer = setTimeout(() => { switchItem(idx); timer = null; }, 250);
+                }
+            };
+        });
+        document.getElementById('pic-count').innerText = `${activeIdx + 1} / ${items.length}`;
     }
 
-    function update() {
-        card.to = document.getElementById('v-to').value;
-        card.msg = document.getElementById('v-msg').value;
-        if (currentCtx === 'to') { card.toS = document.getElementById('v-size').value; card.toC = document.getElementById('v-color').value; }
-        else { card.msgS = document.getElementById('v-size').value; card.msgC = document.getElementById('v-color').value; }
-        updateUI();
+    async function switchItem(idx) {
+        if (idx === activeIdx) return;
+        // 切換前：如果是從編輯狀態切換走，則將該張「鎖定」
+        if (!items[activeIdx].isLocked && !isLockedMode) {
+            items[activeIdx].img = await cp.result({ type: 'base64', size: 'viewport', format: 'jpeg', quality: 0.8 });
+            items[activeIdx].isLocked = true;
+        }
+        activeIdx = idx;
+        const it = items[idx];
+        document.getElementById('v-to').value = it.to;
+        document.getElementById('v-msg').value = it.msg;
+        renderThumbs();
+        setupCroppie();
     }
 
-    function updateUI() {
-        const t = document.getElementById('p-to'), m = document.getElementById('p-msg');
-        t.innerText = card.to || "名字";
-        t.style.color = card.toC;
-        t.style.fontSize = { md:'18px', lg:'24px', xl:'30px' }[card.toS];
-        m.innerText = card.msg || "祝福內容";
-        m.style.color = card.msgC;
-        m.style.fontSize = { md:'14px', lg:'18px', xl:'22px' }[card.msgS];
+    function setupMenu() {
+        const menu = document.getElementById('thumb-menu');
+        // 更換照片 = 解鎖該張圖片重新裁切
+        document.getElementById('menu-replace').onclick = () => { 
+            items[menuIdx].isLocked = false; 
+            isReplacing = true; 
+            document.getElementById('f-in').click(); 
+            hideContextMenu(); 
+        };
+        document.getElementById('menu-del').onclick = () => {
+            if (items.length > 1) {
+                items.splice(menuIdx, 1);
+                activeIdx = Math.max(0, activeIdx - 1);
+                renderThumbs(); setupCroppie();
+            }
+            hideContextMenu();
+        };
+        document.addEventListener('click', (e) => { if (!menu.contains(e.target)) hideContextMenu(); });
     }
+
+    function showContextMenu(e, idx) {
+        menuIdx = idx;
+        const menu = document.getElementById('thumb-menu');
+        menu.style.display = 'block';
+        menu.style.top = `${e.clientY - 60}px`; menu.style.left = `${Math.min(e.clientX, window.innerWidth - 130)}px`;
+        e.stopPropagation();
+    }
+    function hideContextMenu() { document.getElementById('thumb-menu').style.display = 'none'; }
 
     async function handleFile(input) {
-        if (!input.files || !input.files[0]) return;
-        
-        const btnUp = document.getElementById('btn-up');
-        const cpWrap = document.getElementById('cp-wrap');
-
-        // 核心邏輯：如果圖片尚未鎖定，則先將「上一張」上傳並鎖定
-        if (!isImgLocked) {
-            btnUp.innerText = "⏳ 正在鎖定上一張圖...";
-            btnUp.disabled = true;
-            try {
-                // 1. 裁切並壓縮上一張圖
-                const blob = await cp.result({ type: 'blob', size: { width: 800 }, format: 'jpeg', quality: 0.85 });
-                const fd = new FormData();
-                fd.append('file', blob, 'card.jpg');
-                fd.append('upload_preset', UPLOAD_PRESET);
-
-                // 2. 上傳到 Cloudinary
-                const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`, { method: 'POST', body: fd });
-                if (!res.ok) throw new Error("上傳失敗");
-                const d = await res.json();
-
-                // 3. 更新圖片網址並鎖定
-                card.img = d.secure_url;
-                isImgLocked = true;
-                btnUp.innerText = "🔒 圖片已鎖定，可更換新圖";
-                btnUp.disabled = false;
-                cpWrap.classList.add('cp-locked'); // 視覺上鎖定 Croppie
-
-                // 重新綁定已上傳的圖片（此時 Croppie 僅作展示，無法縮放）
-                cp.bind({ url: card.img });
-                alert("上一張圖片已完成編輯並鎖定，您現在可以更換新照片。");
-
-            } catch (e) {
-                btnUp.innerText = "📷 新增照片 (確定後鎖定圖)";
-                btnUp.disabled = false;
-                alert("鎖定圖片失敗，請重試：" + e.message);
-                return; // 中斷流程，不載入新圖
-            }
-        }
-
-        // 載入新照片進入 Croppie 進行編輯（這張新照片尚未被鎖定）
-        const r = new FileReader();
-        r.onload = (e) => {
-            cpWrap.classList.remove('cp-locked'); // 解除新圖的視覺鎖定
-            cp.bind({ url: e.target.result });
-            isImgLocked = false; // 新圖預設未鎖定
-            btnUp.innerText = "📷 新增照片 (確定後鎖定圖)";
+        if (isLockedMode || !input.files[0]) return;
+        document.getElementById('loader').style.display = 'flex';
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const img = new Image();
+            img.onload = () => {
+                const cvs = document.createElement('canvas');
+                let w = img.width, h = img.height, max = 1000;
+                if (w > h && w > max) { h *= max/w; w = max; } else if (h > max) { w *= max/h; h = max; }
+                cvs.width = w; cvs.height = h;
+                cvs.getContext('2d').drawImage(img, 0, 0, w, h);
+                const slim = cvs.toDataURL('image/jpeg', 0.8);
+                
+                if (isReplacing) {
+                    items[menuIdx].img = slim; 
+                    items[menuIdx].isLocked = false; // 新換上來的圖要解鎖編輯
+                    activeIdx = menuIdx; 
+                    isReplacing = false;
+                } else {
+                    // 新增照片時，先將當前這張鎖定
+                    if (!items[activeIdx].isLocked) {
+                        cp.result({ type: 'base64', size: 'viewport', format: 'jpeg', quality: 0.8 }).then(res => {
+                            items[activeIdx].img = res;
+                            items[activeIdx].isLocked = true;
+                            addNewCard(slim);
+                        });
+                        return;
+                    }
+                    addNewCard(slim);
+                }
+                function addNewCard(src) {
+                    if (items.length < 10) {
+                        items.push({ ...items[activeIdx], img: src, to: '', msg: '', isLocked: false });
+                        activeIdx = items.length - 1;
+                    }
+                    renderThumbs(); setupCroppie();
+                    document.getElementById('loader').style.display = 'none';
+                }
+                renderThumbs(); setupCroppie();
+                document.getElementById('loader').style.display = 'none';
+            };
+            img.src = e.target.result;
         };
-        r.readAsDataURL(input.files[0]);
+        reader.readAsDataURL(input.files[0]);
+    }
+
+    function setCtx(ctx) { currentCtx = ctx; update(); }
+    function update() {
+        const it = items[activeIdx];
+        it.to = document.getElementById('v-to').value;
+        it.msg = document.getElementById('v-msg').value;
+        if (currentCtx === 'to') { it.toS = document.getElementById('v-size').value; it.toC = document.getElementById('v-color').value; }
+        else { it.msgS = document.getElementById('v-size').value; it.msgC = document.getElementById('v-color').value; }
+        updateUI();
+    }
+    function updateUI() {
+        const it = items[activeIdx];
+        const t = document.getElementById('p-to'), m = document.getElementById('p-msg');
+        t.innerText = it.to; t.style.color = it.toC; t.style.fontSize = {md:'18px',lg:'24px',xl:'30px'}[it.toS];
+        m.innerText = it.msg; m.style.color = it.msgC; m.style.fontSize = {md:'14px',lg:'18px',xl:'22px'}[it.msgS];
     }
 
     async function send() {
-        const b = document.getElementById('go'); 
-        b.disabled = true; b.innerText = "傳送中...";
+        const b = document.getElementById('go'); b.disabled = true;
+        document.getElementById('loader').style.display = 'flex';
         try {
-            // 如果圖片尚未鎖定（代表是最後一張編輯的新圖），則需要上傳
-            if (!isImgLocked) {
-                b.innerText = "⏳ 正在上傳最後一張圖...";
-                const blob = await cp.result({ type: 'blob', size: { width: 800 }, format: 'jpeg', quality: 0.85 });
-                const fd = new FormData();
-                fd.append('file', blob, 'card.jpg');
-                fd.append('upload_preset', UPLOAD_PRESET);
-                const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`, { method: 'POST', body: fd });
-                if (!res.ok) throw new Error("上傳失敗");
-                const d = await res.json();
-                card.img = d.secure_url;
-            }
-            
-            // 方法一：Flex 層疊結構
-            await liff.shareTargetPicker([{
-                "type": "flex", "altText": "收到一份白六賀卡！",
-                "contents": {
-                    "type": "bubble", "size": "mega",
-                    "hero": {
-                        "type": "image", "url": card.img, "size": "full", "aspectRatio": "20:13", "aspectMode": "cover"
-                    },
-                    "hero_overlay": { // 使用 Flex Overlay 壓文字
-                        "type": "box", "layout": "vertical", "position": "absolute", "offsetBottom": "0px", "offsetStart": "0px", "offsetEnd": "0px", "paddingAll": "20px",
-                        "background": { "type": "linearGradient", "angle": "0deg", "startColor": "#000000aa", "endColor": "#00000000" },
-                        "contents": [
-                            { "type": "text", "text": card.to || "親愛的朋友", "weight": "bold", "size": card.toS, "color": card.toC },
-                            { "type": "text", "text": card.msg || "祝你有個美好的一天！", "wrap": true, "size": card.msgS === 'xl' ? 'lg' : card.msgS, "color": card.msgC, "margin": "sm" }
-                        ]
-                    },
-                    "footer": {
-                        "type": "box", "layout": "horizontal", "contents": [
-                            { "type": "button", "style": "primary", "color": "#00b900", "height": "sm", "action": { "type": "uri", "label": "我也要送", "uri": `https://liff.line.me/${LIFF_ID}` } }
-                        ]
+            const finalImgs = [];
+            for (let i=0; i<items.length; i++) {
+                if (isLockedMode) {
+                    finalImgs.push(items[i].img);
+                } else {
+                    // 最終確認：如果尚未轉換成最終裁切圖，則執行轉換
+                    let output;
+                    if (!items[i].isLocked) {
+                        await switchItem(i); // 切換會觸發自動鎖定與裁切
                     }
+                    // 將 base64 或 網址轉為 blob 上傳
+                    const blob = await fetch(items[i].img).then(r => r.blob());
+                    const fd = new FormData();
+                    fd.append('file', blob); fd.append('upload_preset', UPLOAD_PRESET);
+                    const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`, { method: 'POST', body: fd });
+                    const d = await res.json();
+                    finalImgs.push(d.secure_url);
                 }
-            }]);
+            }
+            const f = items[0];
+            const shareUrl = `https://liff.line.me/${LIFF_ID}/?imgs=${encodeURIComponent(JSON.stringify(finalImgs))}&to=${encodeURIComponent(f.to)}&msg=${encodeURIComponent(f.msg)}&toS=${f.toS}&msgS=${f.msgS}&toC=${encodeURIComponent(f.toC)}&msgC=${encodeURIComponent(f.msgC)}`;
+            const bubbles = finalImgs.map((url, i) => ({
+                "type": "bubble", "size": "mega",
+                "body": {
+                    "type": "box", "layout": "vertical", "paddingAll": "0px",
+                    "contents": [
+                        { "type": "image", "url": url, "size": "full", "aspectRatio": "20:13", "aspectMode": "cover" },
+                        {
+                            "type": "box", "layout": "vertical", "position": "absolute", "offsetBottom": "0px", "offsetStart": "0px", "offsetEnd": "0px", "paddingAll": "20px",
+                            "background": { "type": "linearGradient", "angle": "0deg", "startColor": "#000000aa", "endColor": "#00000000" },
+                            "contents": [
+                                { "type": "text", "text": items[i].to || " ", "weight": "bold", "size": items[i].toS, "color": items[i].toC },
+                                { "type": "text", "text": items[i].msg || " ", "wrap": true, "size": items[i].msgS==='xl'?'lg':items[i].msgS, "color": items[i].msgC, "margin": "sm" }
+                            ]
+                        }
+                    ]
+                },
+                "footer": { "type": "box", "layout": "horizontal", "spacing": "md", "contents": [
+                    { "type": "button", "style": "secondary", "height": "sm", "color": "#eeeeee", "action": { "type": "uri", "label": "我也要送", "uri": `https://liff.line.me/${LIFF_ID}` } },
+                    { "type": "button", "style": "primary", "height": "sm", "color": "#00b900", "action": { "type": "uri", "label": "快速轉傳", "uri": shareUrl } }
+                ]}
+            }));
+            await liff.shareTargetPicker([{ "type": "flex", "altText": "收到賀卡！", "contents": { "type": "carousel", "contents": bubbles } }]);
             liff.closeWindow();
-        } catch (e) { b.disabled = false; b.innerText = "🚀 傳送強固賀卡"; alert(e.message); }
+        } catch (e) { alert(e.message); b.disabled = false; document.getElementById('loader').style.display = 'none'; }
     }
     window.onload = init;
 </script>
