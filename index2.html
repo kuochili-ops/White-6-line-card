@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>𓃥 白六賀卡·高清多片版</title>
+    <title>𓃥 白六賀卡·高清強固版</title>
     <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/croppie/2.6.5/croppie.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/croppie/2.6.5/croppie.min.js"></script>
@@ -33,7 +33,10 @@
 </head>
 <body>
 
-<div id="loader" class="loading-mask">✨ 正在優化畫質...</div>
+<div id="loader" class="loading-mask">
+    <div id="load-text">✨ 準備高清處理...</div>
+    <div id="load-progress" style="font-size:12px; margin-top:10px; color:#666;"></div>
+</div>
 
 <div id="thumb-menu" class="ctx-menu">
     <button id="menu-replace">📷 更換/重新裁切</button>
@@ -42,7 +45,7 @@
 
 <div class="container">
     <div style="padding:5px; display:flex; justify-content:space-between; align-items:center;">
-        <span style="font-weight:900; color:#00b900;">𓃥 白六賀卡·高清鎖定版</span>
+        <span style="font-weight:900; color:#00b900;">𓃥 白六賀卡·高清強固版</span>
         <span id="pic-count" style="font-size:12px; color:#aaa;">1 / 1</span>
     </div>
 
@@ -51,9 +54,9 @@
     <div class="editor-box">
         <div class="input-main">
             <label>姓名</label>
-            <input type="text" id="v-to" placeholder="請輸入姓名" oninput="update()" onfocus="setCtx('to')">
+            <input type="text" id="v-to" placeholder="名字" oninput="update()" onfocus="setCtx('to')">
             <label>祝福</label>
-            <textarea id="v-msg" rows="2" placeholder="請輸入祝福內容" oninput="update()" onfocus="setCtx('msg')"></textarea>
+            <textarea id="v-msg" rows="2" placeholder="內容" oninput="update()" onfocus="setCtx('msg')"></textarea>
             <button id="btn-up-init" class="btn-upload" onclick="document.getElementById('f-in').click()">📷 新增照片</button>
             <input type="file" id="f-in" hidden accept="image/*" onchange="handleFile(this)">
         </div>
@@ -92,7 +95,6 @@
             if (p.get('imgs')) {
                 isLockedMode = true;
                 const rawImgs = JSON.parse(decodeURIComponent(p.get('imgs')));
-                // 強制補全 https 並解決 CORS 問題
                 items = rawImgs.map(url => ({
                     to: p.get('to')||'', msg: p.get('msg')||'', 
                     toS: p.get('toS')||'xl', msgS: p.get('msgS')||'md', 
@@ -102,7 +104,7 @@
                 document.getElementById('btn-up-init').style.display = 'none';
             }
             setupCroppie(); renderThumbs(); setupMenu();
-        } catch (e) { console.error("Init Error:", e); }
+        } catch (e) { alert("LIFF 初始化失敗"); }
     }
 
     function setupCroppie() {
@@ -111,25 +113,12 @@
         cp = new Croppie(document.getElementById('cp-wrap'), {
             viewport: { width: 300, height: 195, type: 'square' },
             boundary: { width: '100%', height: '100%' }, 
-            showZoomer: !it.isLocked,
-            enableOrientation: true
+            showZoomer: !it.isLocked, enableOrientation: true
         });
-        
-        // 核心修正：加入 crossOrigin 解決 Cloudinary 載入權限問題
-        cp.bind({ 
-            url: it.img,
-            zoom: 1,
-            crossOrigin: 'anonymous' 
-        });
-        
+        cp.bind({ url: it.img, zoom: 1, crossOrigin: 'anonymous' });
         const wrap = document.getElementById('cp-wrap');
-        if(it.isLocked) {
-            wrap.style.pointerEvents = 'none';
-            document.getElementById('status-tag').style.display = 'block';
-        } else {
-            wrap.style.pointerEvents = 'auto';
-            document.getElementById('status-tag').style.display = 'none';
-        }
+        if(it.isLocked) { wrap.style.pointerEvents = 'none'; document.getElementById('status-tag').style.display = 'block'; }
+        else { wrap.style.pointerEvents = 'auto'; document.getElementById('status-tag').style.display = 'none'; }
         updateUI();
     }
 
@@ -140,12 +129,8 @@
             let timer = null;
             thumb.onclick = (e) => {
                 const idx = parseInt(e.target.dataset.index);
-                if (timer) {
-                    clearTimeout(timer); timer = null;
-                    if (!isLockedMode) showContextMenu(e, idx);
-                } else {
-                    timer = setTimeout(() => { switchItem(idx); timer = null; }, 250);
-                }
+                if (timer) { clearTimeout(timer); timer = null; if (!isLockedMode) showContextMenu(e, idx); }
+                else { timer = setTimeout(() => { switchItem(idx); timer = null; }, 250); }
             };
         });
         document.getElementById('pic-count').innerText = `${activeIdx + 1} / ${items.length}`;
@@ -154,7 +139,6 @@
     async function switchItem(idx) {
         if (idx === activeIdx) return;
         if (!items[activeIdx].isLocked && !isLockedMode) {
-            // 切換時執行高清裁切 (1200px)
             items[activeIdx].img = await cp.result({ type: 'base64', size: { width: 1200 }, format: 'jpeg', quality: 0.9 });
             items[activeIdx].isLocked = true;
         }
@@ -167,35 +151,18 @@
 
     function setupMenu() {
         const menu = document.getElementById('thumb-menu');
-        document.getElementById('menu-replace').onclick = () => { 
-            items[menuIdx].isLocked = false; 
-            isReplacing = true; 
-            document.getElementById('f-in').click(); 
-            hideContextMenu(); 
-        };
-        document.getElementById('menu-del').onclick = () => {
-            if (items.length > 1) {
-                items.splice(menuIdx, 1);
-                activeIdx = Math.max(0, activeIdx - 1);
-                renderThumbs(); setupCroppie();
-            }
-            hideContextMenu();
-        };
+        document.getElementById('menu-replace').onclick = () => { items[menuIdx].isLocked = false; isReplacing = true; document.getElementById('f-in').click(); hideContextMenu(); };
+        document.getElementById('menu-del').onclick = () => { if (items.length > 1) { items.splice(menuIdx, 1); activeIdx = Math.max(0, activeIdx - 1); renderThumbs(); setupCroppie(); } hideContextMenu(); };
         document.addEventListener('click', (e) => { if (!menu.contains(e.target)) hideContextMenu(); });
     }
 
-    function showContextMenu(e, idx) {
-        menuIdx = idx;
-        const menu = document.getElementById('thumb-menu');
-        menu.style.display = 'block';
-        menu.style.top = `${e.clientY - 60}px`; menu.style.left = `${Math.min(e.clientX, window.innerWidth - 130)}px`;
-        e.stopPropagation();
-    }
+    function showContextMenu(e, idx) { menuIdx = idx; const menu = document.getElementById('thumb-menu'); menu.style.display = 'block'; menu.style.top = `${e.clientY - 60}px`; menu.style.left = `${Math.min(e.clientX, window.innerWidth - 130)}px`; e.stopPropagation(); }
     function hideContextMenu() { document.getElementById('thumb-menu').style.display = 'none'; }
 
     async function handleFile(input) {
         if (isLockedMode || !input.files[0]) return;
         document.getElementById('loader').style.display = 'flex';
+        document.getElementById('load-text').innerText = "✨ 正在載入新照片...";
         const reader = new FileReader();
         reader.onload = (e) => {
             const img = new Image();
@@ -205,17 +172,12 @@
                 if (w > h && w > max) { h *= max/w; w = max; } else if (h > max) { w *= max/h; h = max; }
                 cvs.width = w; cvs.height = h;
                 cvs.getContext('2d').drawImage(img, 0, 0, w, h);
-                const slim = cvs.toDataURL('image/jpeg', 0.95);
-                
-                if (isReplacing) {
-                    items[menuIdx].img = slim; 
-                    items[menuIdx].isLocked = false;
-                    activeIdx = menuIdx; isReplacing = false;
-                } else {
+                const slim = cvs.toDataURL('image/jpeg', 0.92);
+                if (isReplacing) { items[menuIdx].img = slim; items[menuIdx].isLocked = false; activeIdx = menuIdx; isReplacing = false; }
+                else {
                     if (!items[activeIdx].isLocked) {
                         cp.result({ type: 'base64', size: { width: 1200 }, format: 'jpeg', quality: 0.9 }).then(res => {
-                            items[activeIdx].img = res;
-                            items[activeIdx].isLocked = true;
+                            items[activeIdx].img = res; items[activeIdx].isLocked = true;
                             addNew(slim);
                         });
                         return;
@@ -223,12 +185,8 @@
                     addNew(slim);
                 }
                 function addNew(src) {
-                    if (items.length < 10) {
-                        items.push({ ...items[activeIdx], img: src, to: '', msg: '', isLocked: false });
-                        activeIdx = items.length - 1;
-                    }
-                    renderThumbs(); setupCroppie();
-                    document.getElementById('loader').style.display = 'none';
+                    if (items.length < 10) { items.push({ ...items[activeIdx], img: src, to: '', msg: '', isLocked: false }); activeIdx = items.length - 1; }
+                    renderThumbs(); setupCroppie(); document.getElementById('loader').style.display = 'none';
                 }
             };
             img.src = e.target.result;
@@ -239,8 +197,7 @@
     function setCtx(ctx) { currentCtx = ctx; update(); }
     function update() {
         const it = items[activeIdx];
-        it.to = document.getElementById('v-to').value;
-        it.msg = document.getElementById('v-msg').value;
+        it.to = document.getElementById('v-to').value; it.msg = document.getElementById('v-msg').value;
         if (currentCtx === 'to') { it.toS = document.getElementById('v-size').value; it.toC = document.getElementById('v-color').value; }
         else { it.msgS = document.getElementById('v-size').value; it.msgC = document.getElementById('v-color').value; }
         updateUI();
@@ -252,26 +209,50 @@
         m.innerText = it.msg; m.style.color = it.msgC; m.style.fontSize = {md:'14px',lg:'18px',xl:'22px'}[it.msgS];
     }
 
+    // 優化後的傳送功能：循序上傳，降低壓力
     async function send() {
         const b = document.getElementById('go'); b.disabled = true;
-        document.getElementById('loader').style.display = 'flex';
+        const loader = document.getElementById('loader');
+        const loadText = document.getElementById('load-text');
+        const loadProg = document.getElementById('load-progress');
+        loader.style.display = 'flex';
+
         try {
             const finalImgs = [];
-            for (let i=0; i<items.length; i++) {
+            for (let i = 0; i < items.length; i++) {
+                loadText.innerText = `🚀 正在處理第 ${i+1} 張...`;
+                loadProg.innerText = `目前總進度: ${Math.round((i/items.length)*100)}%`;
+
                 if (isLockedMode) {
                     finalImgs.push(items[i].img);
                 } else {
-                    if (!items[i].isLocked) { await switchItem(i); } 
+                    // 如果這張圖還沒鎖定（編輯中），先進行高清裁切
+                    if (!items[i].isLocked) {
+                        if (i === activeIdx) {
+                            items[i].img = await cp.result({ type: 'base64', size: { width: 1200 }, format: 'jpeg', quality: 0.92 });
+                        } else {
+                            // 這情況較少見，預防萬一
+                            items[i].isLocked = true; 
+                        }
+                    }
+                    
+                    // 將單張 Base64 轉換並上傳
                     const blob = await fetch(items[i].img).then(r => r.blob());
                     const fd = new FormData();
-                    fd.append('file', blob); fd.append('upload_preset', UPLOAD_PRESET);
+                    fd.append('file', blob);
+                    fd.append('upload_preset', UPLOAD_PRESET);
+
                     const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`, { method: 'POST', body: fd });
+                    if (!res.ok) throw new Error(`第 ${i+1} 張圖片上傳失敗`);
                     const d = await res.json();
                     finalImgs.push(d.secure_url.replace('http://', 'https://'));
                 }
             }
+
+            loadText.innerText = "🎊 即將傳送賀卡...";
             const f = items[0];
             const shareUrl = `https://liff.line.me/${LIFF_ID}/?imgs=${encodeURIComponent(JSON.stringify(finalImgs))}&to=${encodeURIComponent(f.to)}&msg=${encodeURIComponent(f.msg)}&toS=${f.toS}&msgS=${f.msgS}&toC=${encodeURIComponent(f.toC)}&msgC=${encodeURIComponent(f.msgC)}`;
+            
             const bubbles = finalImgs.map((url, i) => ({
                 "type": "bubble", "size": "mega",
                 "body": {
@@ -293,9 +274,16 @@
                     { "type": "button", "style": "primary", "height": "sm", "color": "#00b900", "action": { "type": "uri", "label": "快速轉傳", "uri": shareUrl } }
                 ]}
             }));
+
             await liff.shareTargetPicker([{ "type": "flex", "altText": "收到高清賀卡！", "contents": { "type": "carousel", "contents": bubbles } }]);
             liff.closeWindow();
-        } catch (e) { alert("傳送失敗: " + e.message); b.disabled = false; document.getElementById('loader').style.display = 'none'; }
+
+        } catch (e) { 
+            alert("傳送中斷：" + e.message); 
+            console.error(e);
+            b.disabled = false; 
+            loader.style.display = 'none'; 
+        }
     }
     window.onload = init;
 </script>
