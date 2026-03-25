@@ -3,53 +3,53 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>𓃥 白六賀卡·隱藏熱點</title>
+    <title>𓃥 白六賀卡·極簡版</title>
     <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/croppie/2.6.5/croppie.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/croppie/2.6.5/croppie.min.js"></script>
     <style>
-        body { font-family: -apple-system, "Noto Sans TC", sans-serif; background-color: #f2f4f7; margin: 0; padding: 10px; padding-bottom: 100px; }
-        .container { max-width: 500px; margin: 0 auto; background: white; padding: 15px; border-radius: 28px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); }
-        .editor-box { display: flex; gap: 10px; margin-bottom: 12px; background: #fafafa; padding: 12px; border-radius: 20px; border: 1px solid #eee; }
+        body { font-family: -apple-system, "Noto Sans TC", sans-serif; background-color: #f8f9fa; margin: 0; padding: 12px; }
+        .container { max-width: 500px; margin: 0 auto; background: white; padding: 20px; border-radius: 30px; box-shadow: 0 15px 35px rgba(0,0,0,0.08); }
+        .editor-box { display: flex; gap: 12px; margin-bottom: 15px; background: #fcfcfc; padding: 15px; border-radius: 20px; border: 1px solid #eee; }
         .input-main { flex: 2; }
-        .input-style { flex: 1.1; border-left: 2.5px solid #00b900; padding-left: 10px; }
-        label { font-size: 10px; color: #bbb; font-weight: bold; display: block; margin-bottom: 2px; }
-        input, textarea, select { width: 100%; padding: 7px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; box-sizing: border-box; margin-bottom: 5px; outline: none; }
-        .stage { margin: 10px 0; border: 4px solid #00b900; border-radius: 22px; overflow: hidden; position: relative; background: #000; aspect-ratio: 20/13; }
+        .input-style { flex: 1; border-left: 3px solid #00b900; padding-left: 12px; }
+        label { font-size: 11px; color: #999; font-weight: bold; display: block; margin-bottom: 4px; }
+        input, textarea, select { width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 10px; font-size: 15px; margin-bottom: 8px; outline: none; transition: 0.3s; }
+        input:focus { border-color: #00b900; box-shadow: 0 0 5px rgba(0,185,0,0.2); }
+        .stage { margin: 15px 0; border: 5px solid #00b900; border-radius: 25px; overflow: hidden; position: relative; background: #1a1a1a; aspect-ratio: 20/13; }
         #cp-wrap { width: 100%; height: 100%; }
-        
-        /* 編輯器上的隱藏區域提示 */
-        .overlay { position: absolute; bottom: 0; left: 0; right: 0; pointer-events: none; z-index: 10; padding: 10px 20px; background: linear-gradient(0deg, #00000088 0%, #00000000 100%); }
-        .p-to { display:block; font-weight:bold; text-shadow: 0 1px 4px rgba(0,0,0,0.5); }
-        .p-msg { display:block; text-shadow: 0 1px 4px rgba(0,0,0,0.5); }
-        .hotspot-box { display: flex; gap: 5px; margin-top: 10px; opacity: 0.3; }
-        .hotspot { flex: 1; height: 35px; border: 1px dashed white; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: white; font-size: 9px; }
-        
-        .btn-upload { width: 100%; padding: 12px; background: #f0f0f0; border: 2px dashed #ccc; border-radius: 12px; color: #666; font-weight: bold; cursor: pointer; margin-top: 5px; }
-        .footer { position: fixed; bottom: 0; left: 0; right: 0; padding: 15px; background: white; text-align: center; z-index: 900; }
-        .btn-send { width: 100%; max-width: 450px; background: #00b900; color: white; border: none; padding: 18px; border-radius: 20px; font-size: 19px; font-weight: bold; }
+        .overlay { position: absolute; bottom: 0; left: 0; right: 0; pointer-events: none; z-index: 10; padding: 20px; background: linear-gradient(0deg, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0) 100%); }
+        .p-to { display:block; font-weight:bold; margin-bottom: 2px; }
+        .p-msg { display:block; line-height: 1.4; }
+        /* 預覽熱點提示 */
+        .preview-hotspots { display: flex; gap: 8px; margin-top: 15px; }
+        .hotspot-hint { flex: 1; height: 45px; border: 1.5px dashed rgba(255,255,255,0.4); border-radius: 12px; display: flex; align-items: center; justify-content: center; color: rgba(255,255,255,0.6); font-size: 10px; }
+        .btn-upload { width: 100%; padding: 14px; background: #f0f0f0; border: 2px dashed #bbb; border-radius: 15px; color: #555; font-weight: bold; cursor: pointer; }
+        .footer { margin-top: 20px; }
+        .btn-send { width: 100%; background: #00b900; color: white; border: none; padding: 20px; border-radius: 22px; font-size: 20px; font-weight: 900; letter-spacing: 1px; box-shadow: 0 8px 20px rgba(0,185,0,0.3); }
+        .btn-send:disabled { background: #ccc; box-shadow: none; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <div style="padding:5px; display:flex; justify-content:space-between;">
-        <span style="font-weight:900; color:#00b900;">𓃥 白六賀卡·無字熱點版</span>
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+        <span style="font-weight:900; color:#00b900; font-size:18px;">白六賀卡 · 無痕隱藏版</span>
     </div>
 
     <div class="editor-box">
         <div class="input-main">
-            <label>姓名</label>
-            <input type="text" id="v-to" placeholder="名字" oninput="update()" onfocus="setCtx('to')">
-            <label>祝福</label>
-            <textarea id="v-msg" rows="2" placeholder="內容" oninput="update()" onfocus="setCtx('msg')"></textarea>
-            <button class="btn-upload" onclick="document.getElementById('f-in').click()">📷 換張照片</button>
+            <label>收件人姓名</label>
+            <input type="text" id="v-to" placeholder="想對誰說？" oninput="update()" onfocus="setCtx('to')">
+            <label>祝福語內容</label>
+            <textarea id="v-msg" rows="2" placeholder="寫下心意..." oninput="update()" onfocus="setCtx('msg')"></textarea>
+            <button class="btn-upload" onclick="document.getElementById('f-in').click()">📷 挑選照片</button>
             <input type="file" id="f-in" hidden accept="image/*" onchange="handleFile(this)">
         </div>
         <div class="input-style">
-            <label>字體大小</label>
-            <select id="v-size" onchange="update()"><option value="md">中</option><option value="lg">大</option><option value="xl" selected>特大</option></select>
-            <label>顏色</label>
+            <label>文字大小</label>
+            <select id="v-size" onchange="update()"><option value="md">標準</option><option value="lg">放大</option><option value="xl" selected>特大</option></select>
+            <label>文字顏色</label>
             <input type="color" id="v-color" value="#ffffff" onchange="update()">
         </div>
     </div>
@@ -59,30 +59,37 @@
         <div class="overlay">
             <div id="p-to" class="p-to">名字</div>
             <div id="p-msg" class="p-msg">祝福內容</div>
-            <div class="hotspot-box">
-                <div class="hotspot">隱藏熱點 1</div>
-                <div class="hotspot">隱藏熱點 2</div>
+            <div class="preview-hotspots">
+                <div class="hotspot-hint">隱形熱點：我也要送</div>
+                <div class="hotspot-hint">隱形熱點：快速轉傳</div>
             </div>
         </div>
     </div>
+
+    <div class="footer"><button id="go" class="btn-send" onclick="send()">🚀 傳送高清無痕賀卡</button></div>
 </div>
 
-<div class="footer"><button id="go" class="btn-send" onclick="send()">🚀 傳送無痕賀卡</button></div>
-
 <script>
-    const LIFF_ID = '2009222789-bvdxbeSL', CLOUD_NAME = 'dnwwaush7', UPLOAD_PRESET = 'ml_default';
-    let cp, currentCtx = 'to', card = { to:'', msg:'', toS:'xl', msgS:'md', toC:'#ffffff', msgC:'#ffffff', img: 'https://res.cloudinary.com/dnwwaush7/image/upload/v1774012083/cdegpgigtlzghqnjoadb.jpg' };
+    const LIFF_ID = '2009222789-kAJm4sds', CLOUD_NAME = 'dnwwaush7', UPLOAD_PRESET = 'ml_default';
+    let cp, currentCtx = 'to', card = { to:'', msg:'', toS:'xl', msgS:'md', toC:'#ffffff', msgC:'#ffffff', img: 'https://res.cloudinary.com/dnwwaush7/image/upload/v1742950223/image_l9v1yv.png' };
 
     async function init() {
         try {
             await liff.init({ liffId: LIFF_ID });
+            const p = new URLSearchParams(window.location.search);
+            if (p.get('img')) card.img = p.get('img');
+            
             cp = new Croppie(document.getElementById('cp-wrap'), {
                 viewport: { width: 300, height: 195, type: 'square' },
                 boundary: { width: '100%', height: '100%' }, showZoomer: false
             });
-            cp.bind({ url: card.img });
+            
+            // 強制跨域載入補強
+            const safeImg = card.img.replace('http://', 'https://') + (card.img.includes('?') ? '&' : '?') + 'cv=' + Date.now();
+            cp.bind({ url: safeImg, crossOrigin: 'anonymous' });
+            
             updateUI();
-        } catch (e) { console.log(e); }
+        } catch (e) { console.error("LIFF 載入失敗"); }
     }
 
     function setCtx(ctx) { currentCtx = ctx; update(); }
@@ -111,25 +118,26 @@
     }
 
     async function send() {
-        const b = document.getElementById('go'); b.disabled = true;
+        const b = document.getElementById('go'); b.disabled = true; b.innerText = "✨ 正在沖印高清照片...";
         try {
-            const blob = await cp.result({ type: 'blob', size: { width: 1000 }, format: 'jpeg', quality: 0.9 });
+            const blob = await cp.result({ type: 'blob', size: { width: 1200 }, format: 'jpeg', quality: 0.9 });
             const fd = new FormData();
             fd.append('file', blob); fd.append('upload_preset', UPLOAD_PRESET);
 
             const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`, { method: 'POST', body: fd });
             const d = await res.json();
+            const finalUrl = d.secure_url.replace('http://', 'https://');
             
-            const shareUrl = `https://liff.me/${LIFF_ID}/?img=${encodeURIComponent(d.secure_url)}&to=${encodeURIComponent(card.to)}&msg=${encodeURIComponent(card.msg)}&toS=${card.toS}&msgS=${card.msgS}&toC=${encodeURIComponent(card.toC)}&msgC=${encodeURIComponent(card.msgC)}`;
+            const shareUrl = `https://liff.line.me/${LIFF_ID}/?img=${encodeURIComponent(finalUrl)}&to=${encodeURIComponent(card.to)}&msg=${encodeURIComponent(card.msg)}&toS=${card.toS}&msgS=${card.msgS}&toC=${encodeURIComponent(card.toC)}&msgC=${encodeURIComponent(card.msgC)}`;
 
             await liff.shareTargetPicker([{
-                "type": "flex", "altText": "收到白六賀卡",
+                "type": "flex", "altText": "🎁 您收到了一份白六賀卡！",
                 "contents": {
                     "type": "bubble", "size": "mega",
                     "body": {
                         "type": "box", "layout": "vertical", "paddingAll": "0px",
                         "contents": [
-                            { "type": "image", "url": d.secure_url, "size": "full", "aspectRatio": "20:13", "aspectMode": "cover" },
+                            { "type": "image", "url": finalUrl, "size": "full", "aspectRatio": "20:13", "aspectMode": "cover" },
                             {
                                 "type": "box", "layout": "vertical", "position": "absolute", "offsetBottom": "0px", "offsetStart": "0px", "offsetEnd": "0px", "paddingAll": "20px",
                                 "background": { "type": "linearGradient", "angle": "0deg", "startColor": "#000000aa", "endColor": "#00000000" },
@@ -137,27 +145,20 @@
                                     { "type": "text", "text": card.to || " ", "weight": "bold", "size": card.toS, "color": card.toC },
                                     { "type": "text", "text": card.msg || " ", "wrap": true, "size": card.msgS==='xl'?'lg':card.msgS, "color": card.msgC, "margin": "sm" },
                                     {
-                                        "type": "box", "layout": "horizontal", "spacing": "none", "margin": "md", "height": "40px",
+                                        "type": "box", "layout": "horizontal", "margin": "lg", "height": "50px", "spacing": "none",
                                         "contents": [
-                                            { "type": "filler" }, // 左側熱點：我也要送
-                                            { "type": "filler" }  // 右側熱點：快速轉傳
-                                        ],
-                                        "action": { "type": "uri", "label": " ", "uri": shareUrl } // 這裡設為主要動作
+                                            { "type": "button", "height": "sm", "color": "#00000000", "action": { "type": "uri", "label": " ", "uri": `https://liff.line.me/${LIFF_ID}` } },
+                                            { "type": "button", "height": "sm", "color": "#00000000", "action": { "type": "uri", "label": " ", "uri": shareUrl } }
+                                        ]
                                     }
                                 ]
                             }
-                        ]
-                    },
-                    "footer": { // 真正完全隱藏的按鈕區塊
-                        "type": "box", "layout": "horizontal", "paddingAll": "0px", "contents": [
-                            { "type": "button", "height": "sm", "color": "#00000000", "action": { "type": "uri", "label": " ", "uri": `https://liff.line.me/${LIFF_ID}` } },
-                            { "type": "button", "height": "sm", "color": "#00000000", "action": { "type": "uri", "label": " ", "uri": shareUrl } }
                         ]
                     }
                 }
             }]);
             liff.closeWindow();
-        } catch (e) { b.disabled = false; alert(e.message); }
+        } catch (e) { b.disabled = false; b.innerText = "🚀 傳送賀卡"; alert("發生錯誤：" + e.message); }
     }
     window.onload = init;
 </script>
