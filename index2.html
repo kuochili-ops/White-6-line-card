@@ -3,48 +3,69 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>𓃥 白六賀卡·高清修復</title>
+    <title>𓃥 白六賀卡·高清旗艦版</title>
     <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/croppie/2.6.5/croppie.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/croppie/2.6.5/croppie.min.js"></script>
     <style>
-        body { font-family: -apple-system, "Noto Sans TC", sans-serif; background-color: #f8f9fa; margin: 0; padding: 10px; padding-bottom: 120px; }
+        body { font-family: -apple-system, "Noto Sans TC", sans-serif; background-color: #f8f9fa; margin: 0; padding: 10px; padding-bottom: 120px; -webkit-tap-highlight-color: transparent; }
         .container { max-width: 500px; margin: 0 auto; background: white; padding: 15px; border-radius: 28px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); }
         .editor-box { display: flex; gap: 10px; margin-bottom: 12px; background: #fafafa; padding: 12px; border-radius: 20px; border: 1px solid #eee; }
         .input-main { flex: 2; }
         .input-style { flex: 1.1; border-left: 2.5px solid #00b900; padding-left: 10px; }
         label { font-size: 10px; color: #bbb; font-weight: bold; display: block; margin-bottom: 2px; }
         input, textarea, select { width: 100%; padding: 7px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; margin-bottom: 5px; outline: none; }
-        .stage { margin: 10px 0; border: 4px solid #00b900; border-radius: 22px; overflow: hidden; position: relative; background: #1a1a1a; aspect-ratio: 20/13; }
+        .stage { margin: 10px 0; border: 4px solid #00b900; border-radius: 22px; overflow: hidden; position: relative; background: #222; aspect-ratio: 20/13; }
         #cp-wrap { width: 100%; height: 100%; }
-        .overlay-bottom { position: absolute; bottom: 0; left: 0; right: 0; pointer-events: none; z-index: 10; padding: 30px 20px 20px; background: linear-gradient(0deg, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0) 100%); }
+        
+        .overlay-top { position: absolute; top: 0; left: 0; right: 0; z-index: 10; padding: 10px 20px; display: flex; gap: 8px; }
+        .hotspot-hint { flex: 1; height: 50px; border: 1.5px dashed rgba(255,255,255,0.4); border-radius: 12px; display: flex; align-items: center; justify-content: center; color: rgba(255,255,255,0.6); font-size: 10px; background: rgba(255,255,255,0.1); }
+        .overlay-bottom { position: absolute; bottom: 0; left: 0; right: 0; pointer-events: none; z-index: 10; padding: 30px 20px 20px; background: linear-gradient(0deg, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0) 100%); }
+        
         .btn-upload { width: 100%; padding: 12px; background: #00b900; color: white; border: none; border-radius: 12px; font-weight: bold; cursor: pointer; margin-top: 5px; }
-        .thumb-list { display: flex; gap: 8px; overflow-x: auto; padding: 10px 0; }
-        .thumb { width: 60px; height: 40px; border-radius: 6px; border: 2px solid #ddd; object-fit: cover; flex-shrink: 0; }
+        .thumb-list { display: flex; gap: 8px; overflow-x: auto; padding: 10px 0; min-height: 50px; }
+        .thumb { width: 60px; height: 40px; border-radius: 6px; border: 2px solid #ddd; object-fit: cover; flex-shrink: 0; background: #eee; }
         .thumb.active { border-color: #00b900; }
-        .btn-send { width: 100%; background: #00b900; color: white; border: none; padding: 18px; border-radius: 20px; font-size: 19px; font-weight: bold; margin-top: 10px; }
-        .loading-mask { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(255,255,255,0.9); z-index:1000; flex-direction:column; justify-content:center; align-items:center; color:#00b900; font-weight:bold; }
+        
+        .footer { position: fixed; bottom: 0; left: 0; right: 0; padding: 15px; background: white; z-index: 900; border-top: 1px solid #eee; }
+        .btn-send { width: 100%; background: #00b900; color: white; border: none; padding: 18px; border-radius: 20px; font-size: 19px; font-weight: bold; }
+        .loading-mask { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(255,255,255,0.95); z-index:1000; flex-direction:column; justify-content:center; align-items:center; color:#00b900; font-weight:bold; }
+        .locked-tag { position: absolute; top: 12px; right: 12px; background: #ff9800; color: white; padding: 4px 10px; border-radius: 20px; font-size: 11px; z-index: 20; font-weight: bold; }
+        
+        .ctx-menu { display: none; position: fixed; background: white; border-radius: 12px; box-shadow: 0 5px 20px rgba(0,0,0,0.2); z-index: 2000; padding: 5px; min-width: 150px; }
+        .ctx-menu button { display: block; width: 100%; text-align: left; background: none; border: none; padding: 12px 15px; font-size: 14px; border-radius: 8px; }
+        .ctx-menu button.del { color: #ff4d4f; }
     </style>
 </head>
 <body>
 
-<div id="loader" class="loading-mask">🪄 影像優化中...</div>
+<div id="loader" class="loading-mask">🪄 影像處理中...</div>
+
+<div id="thumb-menu" class="ctx-menu">
+    <button id="menu-replace">📷 更換/重裁照片</button>
+    <button id="menu-del" class="del">🗑️ 刪除這張</button>
+</div>
 
 <div class="container">
-    <div style="font-weight:900; color:#00b900; margin-bottom:10px;">𓃥 白六賀卡 · 高清多片版</div>
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:5px;">
+        <span style="font-weight:900; color:#00b900;">𓃥 白六賀卡 · 旗艦版</span>
+        <span id="pic-count" style="font-size:12px; color:#aaa;">1 / 1</span>
+    </div>
+
     <div class="thumb-list" id="thumb-container"></div>
 
     <div class="editor-box">
         <div class="input-main">
             <label>名字</label>
-            <input type="text" id="v-to" placeholder="收件人" oninput="update()">
+            <input type="text" id="v-to" placeholder="收件人" oninput="update()" onfocus="setCtx('to')">
             <label>祝福</label>
-            <textarea id="v-msg" rows="2" placeholder="內容" oninput="update()"></textarea>
+            <textarea id="v-msg" rows="2" placeholder="想說的話" oninput="update()" onfocus="setCtx('msg')"></textarea>
             <button id="btn-up-init" class="btn-upload" onclick="document.getElementById('f-in').click()">📷 新增照片</button>
             <input type="file" id="f-in" hidden accept="image/*" onchange="handleFile(this)">
         </div>
         <div class="input-style">
-            <label>大小</label>
+            <div id="focus-tag" style="font-size:11px; color:#00b900; margin-bottom:5px; font-weight:900;">編輯姓名</div>
+            <label>字體大小</label>
             <select id="v-size" onchange="update()"><option value="md">中</option><option value="lg">大</option><option value="xl" selected>特大</option></select>
             <label>顏色</label>
             <input type="color" id="v-color" value="#ffffff" onchange="update()">
@@ -52,18 +73,24 @@
     </div>
 
     <div class="stage">
+        <div id="status-tag" class="locked-tag" style="display:none;">🔒 已鎖定照片</div>
         <div id="cp-wrap"></div>
+        <div class="overlay-top">
+            <div class="hotspot-hint">我也要送 (左)</div>
+            <div class="hotspot-hint">快速轉傳 (右)</div>
+        </div>
         <div class="overlay-bottom">
             <div id="p-to" style="font-weight:bold;">名字</div>
-            <div id="p-msg" style="line-height:1.4;">內容</div>
+            <div id="p-msg" style="line-height:1.4; margin-top:4px;">祝福內容</div>
         </div>
     </div>
-    <button id="go" class="btn-send" onclick="send()">🚀 傳送賀卡</button>
 </div>
+
+<div class="footer"><button id="go" class="btn-send" onclick="send()">🚀 傳送多片賀卡</button></div>
 
 <script>
     const LIFF_ID = '2009222789-bvdxbeSL', CLOUD_NAME = 'dnwwaush7', UPLOAD_PRESET = 'ml_default';
-    let cp, activeIdx = 0, isGlobalLocked = false;
+    let cp, activeIdx = 0, currentCtx = 'to', isGlobalLocked = false, isReplacing = false, menuIdx = -1;
     let items = [{ to:'', msg:'', toS:'xl', msgS:'md', toC:'#ffffff', msgC:'#ffffff', img: 'https://res.cloudinary.com/dnwwaush7/image/upload/v1742950223/image_l9v1yv.png', isLocked: false }];
 
     async function init() {
@@ -78,14 +105,30 @@
                     toC: p.get('toC')||'#ffffff', msgC: p.get('msgC')||'#ffffff', img: url.replace('http://', 'https://'), isLocked: true 
                 }));
                 document.getElementById('btn-up-init').style.display = 'none';
-                document.getElementById('v-to').value = items[0].to;
-                document.getElementById('v-msg').value = items[0].msg;
+                document.getElementById('v-to').value = items[0].to; document.getElementById('v-msg').value = items[0].msg;
             }
-            setupCroppie(); renderThumbs();
+            setupCroppie(); renderThumbs(); setupMenu();
         } catch (e) { console.error(e); }
     }
 
-    function setupCroppie() {
+    // 強化：解決黑屏的關鍵函數 - 先用畫布提取影像數據
+    async function getSafeImg(url) {
+        return new Promise((resolve) => {
+            const img = new Image();
+            img.crossOrigin = "anonymous";
+            img.onload = () => {
+                const cvs = document.createElement('canvas');
+                cvs.width = img.width; cvs.height = img.height;
+                const ctx = cvs.getContext('2d');
+                ctx.drawImage(img, 0, 0);
+                resolve(cvs.toDataURL("image/jpeg", 0.9)); // 轉成 Base64 斷開 CORS 關聯
+            };
+            img.onerror = () => resolve(url);
+            img.src = url + (url.includes('?') ? '&' : '?') + 'cv=' + Date.now();
+        });
+    }
+
+    async function setupCroppie() {
         if(cp) cp.destroy();
         const it = items[activeIdx];
         cp = new Croppie(document.getElementById('cp-wrap'), {
@@ -94,21 +137,36 @@
             showZoomer: !it.isLocked, mouseWheelZoom: !it.isLocked, enableOrientation: true
         });
         
-        // 關鍵修復：處理 HTTPS 與匿名載入
-        const safeUrl = it.img.replace('http://', 'https://') + (it.img.includes('?') ? '&' : '?') + 'cv=' + Date.now();
-        cp.bind({ url: safeUrl, zoom: 1, crossOrigin: 'anonymous' });
+        const displayImg = it.img.startsWith('data:') ? it.img : await getSafeImg(it.img);
+        cp.bind({ url: displayImg, zoom: 1 });
+        
+        document.getElementById('status-tag').style.display = it.isLocked ? 'block' : 'none';
+        document.getElementById('cp-wrap').style.pointerEvents = it.isLocked ? 'none' : 'auto';
         updateUI();
     }
 
     function renderThumbs() {
         const c = document.getElementById('thumb-container');
-        c.innerHTML = items.map((it, i) => `<img src="${it.img}" class="thumb ${i===activeIdx?'active':''}" onclick="switchItem(${i})">`).join('');
+        c.innerHTML = items.map((it, i) => `<img src="${it.img}" class="thumb ${i===activeIdx?'active':''}" data-index="${i}">`).join('');
+        document.querySelectorAll('.thumb').forEach(thumb => {
+            let timer = null;
+            thumb.onclick = (e) => {
+                const idx = parseInt(e.target.dataset.index);
+                if (timer) {
+                    clearTimeout(timer); timer = null;
+                    if (!isGlobalLocked) showContextMenu(e, idx);
+                } else {
+                    timer = setTimeout(() => { switchItem(idx); timer = null; }, 250);
+                }
+            };
+        });
+        document.getElementById('pic-count').innerText = `${activeIdx + 1} / ${items.length}`;
     }
 
     async function switchItem(idx) {
         if (idx === activeIdx) return;
         if (!items[activeIdx].isLocked && !isGlobalLocked) {
-            items[activeIdx].img = await cp.result({ type: 'base64', size: { width: 1200 }, format: 'jpeg', quality: 0.9 });
+            items[activeIdx].img = await cp.result({ type: 'base64', size: { width: 1200 }, format: 'jpeg', quality: 0.92 });
             items[activeIdx].isLocked = true;
         }
         activeIdx = idx;
@@ -117,53 +175,68 @@
         renderThumbs(); setupCroppie();
     }
 
+    function setupMenu() {
+        document.getElementById('menu-replace').onclick = () => { items[menuIdx].isLocked = false; isReplacing = true; document.getElementById('f-in').click(); hideContextMenu(); };
+        document.getElementById('menu-del').onclick = () => { 
+            if (items.length > 1) { items.splice(menuIdx, 1); activeIdx = 0; renderThumbs(); setupCroppie(); }
+            hideContextMenu(); 
+        };
+        document.addEventListener('click', (e) => { if (!document.getElementById('thumb-menu').contains(e.target)) hideContextMenu(); });
+    }
+
+    function showContextMenu(e, idx) {
+        menuIdx = idx; const m = document.getElementById('thumb-menu');
+        m.style.display = 'block'; m.style.top = `${e.clientY - 60}px`; m.style.left = `${Math.min(e.clientX, window.innerWidth - 160)}px`;
+        e.stopPropagation();
+    }
+    function hideContextMenu() { document.getElementById('thumb-menu').style.display = 'none'; }
+
     async function handleFile(input) {
         if (isGlobalLocked || !input.files[0]) return;
         document.getElementById('loader').style.display = 'flex';
         const reader = new FileReader();
         reader.onload = (e) => {
-            items.push({ ...items[activeIdx], img: e.target.result, to: '', msg: '', isLocked: false });
-            activeIdx = items.length - 1;
-            renderThumbs(); setupCroppie();
-            document.getElementById('loader').style.display = 'none';
+            if (isReplacing) { items[menuIdx].img = e.target.result; items[menuIdx].isLocked = false; activeIdx = menuIdx; isReplacing = false; }
+            else { items.push({ ...items[activeIdx], img: e.target.result, to: '', msg: '', isLocked: false }); activeIdx = items.length - 1; }
+            renderThumbs(); setupCroppie(); document.getElementById('loader').style.display = 'none';
         };
         reader.readAsDataURL(input.files[0]);
     }
 
+    function setCtx(ctx) { currentCtx = ctx; document.getElementById('focus-tag').innerText = ctx==='to'?'編輯姓名':'編輯內容'; updateUI(); }
+    
     function update() {
         const it = items[activeIdx];
-        it.to = document.getElementById('v-to').value;
-        it.msg = document.getElementById('v-msg').value;
-        it.toS = document.getElementById('v-size').value;
-        it.toC = document.getElementById('v-color').value;
+        it.to = document.getElementById('v-to').value; it.msg = document.getElementById('v-msg').value;
+        if (currentCtx === 'to') { it.toS = document.getElementById('v-size').value; it.toC = document.getElementById('v-color').value; }
+        else { it.msgS = document.getElementById('v-size').value; it.msgC = document.getElementById('v-color').value; }
         updateUI();
     }
 
     function updateUI() {
         const it = items[activeIdx], t = document.getElementById('p-to'), m = document.getElementById('p-msg');
         t.innerText = it.to || "名字"; t.style.color = it.toC; t.style.fontSize = { md:'18px', lg:'24px', xl:'30px' }[it.toS];
-        m.innerText = it.msg || "內容"; m.style.color = it.toC; m.style.fontSize = { md:'14px', lg:'18px', xl:'22px' }[it.toS === 'xl' ? 'lg' : 'md'];
+        m.innerText = it.msg || "祝福內容"; m.style.color = it.msgC; m.style.fontSize = { md:'14px', lg:'18px', xl:'22px' }[it.msgS];
+        document.getElementById('v-size').value = currentCtx === 'to' ? it.toS : it.msgS;
+        document.getElementById('v-color').value = currentCtx === 'to' ? it.toC : it.msgC;
     }
 
     async function send() {
-        const b = document.getElementById('go'); b.disabled = true;
-        document.getElementById('loader').style.display = 'flex';
+        const b = document.getElementById('go'); b.disabled = true; document.getElementById('loader').style.display = 'flex';
         try {
             const finalImgs = [];
             for (let i=0; i<items.length; i++) {
                 if (isGlobalLocked) { finalImgs.push(items[i].img); }
                 else {
-                    const imgData = (i === activeIdx) ? await cp.result({ type: 'base64', size: { width: 1200 }, format: 'jpeg', quality: 0.9 }) : items[i].img;
+                    const imgData = (i === activeIdx) ? await cp.result({ type: 'base64', size: { width: 1200 }, format: 'jpeg', quality: 0.92 }) : items[i].img;
                     const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
+                        method: 'POST', headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ file: imgData, upload_preset: UPLOAD_PRESET })
                     });
-                    const d = await res.json();
-                    finalImgs.push(d.secure_url.replace('http://', 'https://'));
+                    const d = await res.json(); finalImgs.push(d.secure_url.replace('http://', 'https://'));
                 }
             }
-            const f = items[0], shareUrl = `https://liff.line.me/${LIFF_ID}/?imgs=${encodeURIComponent(JSON.stringify(finalImgs))}&to=${encodeURIComponent(f.to)}&msg=${encodeURIComponent(f.msg)}&toS=${f.toS}&toC=${encodeURIComponent(f.toC)}`;
+            const f = items[0], shareUrl = `https://liff.line.me/${LIFF_ID}/?imgs=${encodeURIComponent(JSON.stringify(finalImgs))}&to=${encodeURIComponent(f.to)}&msg=${encodeURIComponent(f.msg)}&toS=${f.toS}&msgS=${f.msgS}&toC=${encodeURIComponent(f.toC)}&msgC=${encodeURIComponent(f.msgC)}`;
             const bubbles = finalImgs.map((url, i) => ({
                 "type": "bubble", "size": "mega",
                 "body": {
@@ -176,14 +249,14 @@
                         ]},
                         { "type": "box", "layout": "vertical", "position": "absolute", "offsetBottom": "0px", "offsetStart": "0px", "offsetEnd": "0px", "paddingAll": "20px", "background": { "type": "linearGradient", "angle": "0deg", "startColor": "#000000cc", "endColor": "#00000000" }, "contents": [
                             { "type": "text", "text": items[i].to || " ", "weight": "bold", "size": items[i].toS, "color": items[i].toC },
-                            { "type": "text", "text": items[i].msg || " ", "wrap": true, "size": items[i].toS==='xl'?'lg':'md', "color": items[i].toC, "margin": "sm" }
+                            { "type": "text", "text": items[i].msg || " ", "wrap": true, "size": items[i].msgS==='xl'?'lg':items[i].msgS, "color": items[i].msgC, "margin": "sm" }
                         ]}
                     ]
                 }
             }));
             await liff.shareTargetPicker([{ "type": "flex", "altText": "🎁 收到白六賀卡！", "contents": { "type": "carousel", "contents": bubbles.slice(0, 10) } }]);
             liff.closeWindow();
-        } catch (e) { alert("傳送失敗：" + e.message); b.disabled = false; document.getElementById('loader').style.display = 'none'; }
+        } catch (e) { alert("失敗：" + e.message); b.disabled = false; document.getElementById('loader').style.display = 'none'; }
     }
     window.onload = init;
 </script>
