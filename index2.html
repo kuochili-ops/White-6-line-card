@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>𓃥 白六賀卡·穩定修復版</title>
+    <title>𓃥 白六賀卡·清爽版</title>
     <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/croppie/2.6.5/croppie.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/croppie/2.6.5/croppie.min.js"></script>
@@ -25,7 +25,7 @@
         .footer { position: fixed; bottom: 0; left: 0; right: 0; padding: 15px; background: white; z-index: 900; border-top: 1px solid #eee; }
         .btn-send { width: 100%; background: #00b900; color: white; border: none; padding: 18px; border-radius: 20px; font-size: 19px; font-weight: bold; }
         .loading-mask { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(255,255,255,0.95); z-index:1000; flex-direction:column; justify-content:center; align-items:center; color:#00b900; font-weight:bold; }
-        .locked-tag { position: absolute; top: 12px; right: 12px; background: #ff9800; color: white; padding: 4px 10px; border-radius: 20px; font-size: 11px; z-index: 20; font-weight: bold; }
+        /* .locked-tag 已移除 */
         .ctx-menu { display: none; position: fixed; background: white; border-radius: 12px; box-shadow: 0 5px 20px rgba(0,0,0,0.2); z-index: 2000; padding: 5px; min-width: 150px; }
         .ctx-menu button { display: block; width: 100%; text-align: left; background: none; border: none; padding: 12px 15px; font-size: 14px; border-radius: 8px; }
     </style>
@@ -41,7 +41,7 @@
 
 <div class="container">
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:5px;">
-        <span style="font-weight:900; color:#00b900;">𓃥 白六賀卡 · 轉傳修正版</span>
+        <span style="font-weight:900; color:#00b900;">𓃥 白六賀卡</span>
         <span id="pic-count" style="font-size:12px; color:#aaa;">1 / 1</span>
     </div>
     <div class="thumb-list" id="thumb-container"></div>
@@ -63,7 +63,6 @@
         </div>
     </div>
     <div class="stage">
-        <div id="status-tag" class="locked-tag" style="display:none;">🔒 照片已鎖定</div>
         <div id="cp-wrap"></div>
         <div class="overlay-bottom">
             <div id="p-to" style="font-weight:bold;">名字</div>
@@ -86,8 +85,7 @@
                 isGlobalLocked = true;
                 const imgUrls = JSON.parse(decodeURIComponent(p.get('imgs')));
                 items = imgUrls.map((url, i) => ({
-                    to: i===0 ? (p.get('to')||'') : '', 
-                    msg: i===0 ? (p.get('msg')||'') : '',
+                    to: i===0 ? (p.get('to')||'') : '', msg: i===0 ? (p.get('msg')||'') : '',
                     toS: p.get('toS')||'xl', msgS: p.get('msgS')||'md', toC: p.get('toC')||'#ffffff', msgC: p.get('msgC')||'#ffffff', 
                     img: url, isLocked: true 
                 }));
@@ -97,7 +95,6 @@
         } catch (e) { console.error("Init Error:", e); }
     }
 
-    // 核心修正：將網址轉換為具備 CORS 權限的 Base64，解決預覽黑屏
     async function getDataUri(url) {
         if (!url || url.startsWith('data:')) return url;
         return new Promise((resolve) => {
@@ -111,7 +108,7 @@
                 ctx.drawImage(this, 0, 0);
                 resolve(canvas.toDataURL('image/jpeg'));
             };
-            img.onerror = () => resolve(url); // 失敗則回傳原址做最後嘗試
+            img.onerror = () => resolve(url);
             img.src = url + (url.includes('?') ? '&' : '?') + 'cors=' + Date.now();
         });
     }
@@ -133,7 +130,6 @@
             await cp.bind({ url: safeData, zoom: 0 });
             
             if (it.isLocked) {
-                // 強制多次縮放校正，防止局部放大
                 setTimeout(() => { if(cp) cp.setZoom(0); }, 50);
                 document.querySelector('.cr-viewport').style.border = 'none';
                 document.getElementById('cp-wrap').style.pointerEvents = 'none';
@@ -143,7 +139,7 @@
         } catch(e) { console.error("Bind Error:", e); }
         
         document.getElementById('loader').style.display = 'none';
-        document.getElementById('status-tag').style.display = it.isLocked ? 'block' : 'none';
+        // status-tag 控制已移除
         updateUI();
     }
 
