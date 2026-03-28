@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>𓃥 白六賀卡·穩定版</title>
+    <title>𓃥 白六賀卡·核心修復版</title>
     <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/croppie/2.6.5/croppie.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/croppie/2.6.5/croppie.min.js"></script>
@@ -21,7 +21,7 @@
         .btn-upload { width: 100%; padding: 12px; background: #00b900; color: white; border: none; border-radius: 12px; font-weight: bold; cursor: pointer; margin-top: 5px; }
         .thumb-list { display: flex; gap: 8px; overflow-x: auto; padding: 10px 0; min-height: 50px; }
         .thumb { width: 60px; height: 40px; border-radius: 6px; border: 2px solid #ddd; object-fit: cover; flex-shrink: 0; background: #eee; }
-        .thumb.active { border-color: #00b900; }
+        .thumb.active { border-color: #00b900; box-shadow: 0 0 5px rgba(0,185,0,0.2); }
         .footer { position: fixed; bottom: 0; left: 0; right: 0; padding: 15px; background: white; z-index: 900; border-top: 1px solid #eee; }
         .btn-send { width: 100%; background: #00b900; color: white; border: none; padding: 18px; border-radius: 20px; font-size: 19px; font-weight: bold; }
         .loading-mask { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(255,255,255,0.95); z-index:1000; flex-direction:column; justify-content:center; align-items:center; color:#00b900; font-weight:bold; }
@@ -32,7 +32,7 @@
 </head>
 <body>
 
-<div id="loader" class="loading-mask">🪄 影像載入中...</div>
+<div id="loader" class="loading-mask">🪄 影像穩定中...</div>
 
 <div id="thumb-menu" class="ctx-menu">
     <button id="menu-replace">📷 更換/重裁照片</button>
@@ -41,7 +41,7 @@
 
 <div class="container">
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:5px;">
-        <span style="font-weight:900; color:#00b900;">𓃥 白六賀卡 · 穩定修復版</span>
+        <span style="font-weight:900; color:#00b900;">𓃥 白六賀卡 · 穩定版</span>
         <span id="pic-count" style="font-size:12px; color:#aaa;">1 / 1</span>
     </div>
     <div class="thumb-list" id="thumb-container"></div>
@@ -93,21 +93,38 @@
                 document.getElementById('btn-up-init').style.display = 'none';
             }
             await setupCroppie(); renderThumbs(); setupMenu();
-        } catch (e) { console.error("Init Error:", e); }
+        } catch (e) { console.error(e); }
     }
 
-    // 修復：如果已經是 datauri 則直接回傳，避免製作新卡時失敗
+    // 終極修復 getDataUri：加入 fallback 機制確保圖片不黑掉
     async function getDataUri(url) {
         if (!url || url.startsWith('data:')) return url;
+        const safeUrl = url + (url.includes('?') ? '&' : '?') + 'cache=' + Date.now();
+        
         try {
-            const response = await fetch(url + (url.includes('?') ? '&' : '?') + 'v=' + Date.now(), { mode: 'cors' });
+            const response = await fetch(safeUrl, { mode: 'cors' });
+            if (!response.ok) throw new Error('Fetch failed');
             const blob = await response.blob();
-            return new Promise((resolve) => {
+            return await new Promise((resolve) => {
                 const reader = new FileReader();
                 reader.onloadend = () => resolve(reader.result);
                 reader.readAsDataURL(blob);
             });
-        } catch (e) { return url; }
+        } catch (e) {
+            // Fallback：如果 fetch 失敗，改用傳統 Image 對象轉換
+            return new Promise((resolve) => {
+                const img = new Image();
+                img.crossOrigin = "anonymous";
+                img.onload = () => {
+                    const canvas = document.createElement("canvas");
+                    canvas.width = img.width; canvas.height = img.height;
+                    canvas.getContext("2d").drawImage(img, 0, 0);
+                    resolve(canvas.toDataURL("image/jpeg"));
+                };
+                img.onerror = () => resolve(url); // 最後的掙扎：回傳原網址
+                img.src = safeUrl;
+            });
+        }
     }
 
     async function setupCroppie() {
@@ -124,16 +141,18 @@
         document.getElementById('loader').style.display = 'flex';
         try {
             const safeData = await getDataUri(it.img);
-            // 綁定後立即執行縮放校正
             await cp.bind({ url: safeData, zoom: 0 });
+            
             if (it.isLocked) {
-                cp.setZoom(0);
+                // 多重強制縮放，確保不局部放大
+                setTimeout(() => { if(cp) cp.setZoom(0); }, 50);
+                setTimeout(() => { if(cp) cp.setZoom(0); }, 200);
                 document.querySelector('.cr-viewport').style.border = 'none';
                 document.getElementById('cp-wrap').style.pointerEvents = 'none';
             } else {
                 document.getElementById('cp-wrap').style.pointerEvents = 'auto';
             }
-        } catch(e) { console.error("Bind Error:", e); }
+        } catch(e) { console.error(e); }
         
         document.getElementById('loader').style.display = 'none';
         document.getElementById('status-tag').style.display = it.isLocked ? 'block' : 'none';
@@ -246,7 +265,7 @@
             }));
             await liff.shareTargetPicker([{ "type": "flex", "altText": "🎁 收到白六賀卡！", "contents": { "type": "carousel", "contents": bubbles.slice(0, 10) } }]);
             liff.closeWindow();
-        } catch (e) { alert("傳送失敗：" + e.message); b.disabled = false; document.getElementById('loader').style.display = 'none'; }
+        } catch (e) { alert("失敗：" + e.message); b.disabled = false; document.getElementById('loader').style.display = 'none'; }
     }
     window.onload = init;
 </script>
