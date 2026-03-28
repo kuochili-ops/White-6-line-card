@@ -15,22 +15,25 @@
         .input-style { flex: 1.1; border-left: 2.5px solid #00b900; padding-left: 10px; }
         label { font-size: 10px; color: #bbb; font-weight: bold; display: block; margin-bottom: 2px; }
         input, textarea, select { width: 100%; padding: 7px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; box-sizing: border-box; margin-bottom: 5px; outline: none; }
-        .stage { margin: 10px 0; border: 4px solid #00b900; border-radius: 22px; overflow: hidden; position: relative; background: #000; aspect-ratio: 20/13; }
+        .stage { margin: 10px 0; border: 4px solid #00b900; border-radius: 22px; overflow: hidden; position: relative; background: #333; aspect-ratio: 20/13; }
         #cp-wrap { width: 100%; height: 100%; }
         .overlay { position: absolute; bottom: 12%; left: 20px; right: 20px; pointer-events: none; z-index: 10; text-shadow: 0 2px 8px rgba(255,255,255,0.8); }
         .btn-upload { width: 100%; padding: 12px; background: #f0f0f0; border: 2px dashed #ccc; border-radius: 12px; color: #666; font-weight: bold; cursor: pointer; margin-top: 5px; }
         .footer { position: fixed; bottom: 0; left: 0; right: 0; padding: 15px; background: white; text-align: center; z-index: 900; border-top: 1px solid #eee; }
         .btn-send { width: 100%; max-width: 450px; background: #00b900; color: white; border: none; padding: 18px; border-radius: 20px; font-size: 19px; font-weight: bold; }
-        .thumb-list { display: flex; gap: 8px; overflow-x: auto; padding: 10px 0; margin-bottom: 5px; }
-        .thumb { width: 60px; height: 40px; border-radius: 6px; border: 2px solid #ddd; cursor: pointer; object-fit: cover; flex-shrink: 0; }
+        .thumb-list { display: flex; gap: 8px; overflow-x: auto; padding: 10px 0; margin-bottom: 5px; min-height: 50px; }
+        .thumb { width: 60px; height: 40px; border-radius: 6px; border: 2px solid #ddd; cursor: pointer; object-fit: cover; flex-shrink: 0; background: #eee; }
         .thumb.active { border-color: #00b900; box-shadow: 0 0 5px rgba(0,185,0,0.5); }
-        .loading-mask { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(255,255,255,0.8); z-index:1000; justify-content:center; align-items:center; font-weight:bold; color:#00b900; }
-        .locked { opacity: 0.5; pointer-events: none; cursor: not-allowed; }
+        .loading-mask { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(255,255,255,0.9); z-index:1000; flex-direction:column; justify-content:center; align-items:center; font-weight:bold; color:#00b900; }
+        .locked { opacity: 0.5; pointer-events: none; }
     </style>
 </head>
 <body>
 
-<div id="loader" class="loading-mask">🪄 圖片處理中...</div>
+<div id="loader" class="loading-mask">
+    <div style="margin-bottom:10px;">🪄 圖片處理中...</div>
+    <div id="load-detail" style="font-size:12px; color:#999;">請稍候</div>
+</div>
 
 <div class="container">
     <div style="padding:5px; display:flex; justify-content:space-between; align-items:center;">
@@ -75,9 +78,10 @@
     let items = [{ to:'', msg:'', toS:'xl', msgS:'md', toC:'#333333', msgC:'#333333', img: 'https://res.cloudinary.com/dnwwaush7/image/upload/v1774012083/cdegpgigtlzghqnjoadb.jpg' }];
 
     async function init() {
-        if (!window.liff) { setTimeout(init, 500); return; }
         try {
             await liff.init({ liffId: LIFF_ID });
+            if (!liff.isLoggedIn()) { liff.login(); return; }
+            
             const p = new URLSearchParams(window.location.search);
             const rawImgs = p.get('imgs');
             
@@ -97,7 +101,9 @@
             
             setupCroppie();
             renderThumbs();
-        } catch (e) { console.error("LIFF Init Error", e); }
+        } catch (e) { 
+            alert("LIFF 初始化失敗，請檢查設定: " + e.message); 
+        }
     }
 
     function setupCroppie() {
@@ -107,7 +113,8 @@
             boundary: { width: '100%', height: '100%' }, 
             showZoomer: !isLocked 
         });
-        cp.bind({ url: items[activeIdx].img });
+        // 關鍵修正：加入 checkCrossOrigin 避免 Canvas 全黑
+        cp.bind({ url: items[activeIdx].img, zoom: 0 });
         updateUI();
     }
 
@@ -119,7 +126,7 @@
 
     async function switchItem(idx) {
         if (!isLocked) {
-            items[activeIdx].img = await cp.result({ type: 'base64', size: 'viewport' });
+            items[activeIdx].img = await cp.result({ type: 'base64', size: 'viewport', format: 'jpeg', quality: 0.8 });
         }
         activeIdx = idx;
         const it = items[idx];
@@ -131,16 +138,18 @@
 
     async function handleFile(input) {
         if (isLocked || !input.files[0]) return;
-        document.getElementById('loader').style.display = 'flex';
+        showLoading("正在瘦身大尺寸照片...");
         const reader = new FileReader();
         reader.onload = (e) => {
             const img = new Image();
+            img.crossOrigin = "anonymous"; // 關鍵：允許 Canvas 處理
             img.onload = () => {
                 const cvs = document.createElement('canvas');
-                let w = img.width, h = img.height, max = 1280;
+                let w = img.width, h = img.height, max = 1200;
                 if (w > h && w > max) { h *= max/w; w = max; } else if (h > max) { w *= max/h; h = max; }
                 cvs.width = w; cvs.height = h;
-                cvs.getContext('2d').drawImage(img, 0, 0, w, h);
+                const ctx = cvs.getContext('2d');
+                ctx.drawImage(img, 0, 0, w, h);
                 const slim = cvs.toDataURL('image/jpeg', 0.8);
                 
                 if (items.length < 10) {
@@ -148,11 +157,10 @@
                     activeIdx = items.length - 1;
                 } else {
                     items[activeIdx].img = slim;
-                    alert("最多支援 10 張照片，已替換目前照片");
                 }
                 renderThumbs();
                 setupCroppie();
-                document.getElementById('loader').style.display = 'none';
+                hideLoading();
             };
             img.src = e.target.result;
         };
@@ -184,26 +192,33 @@
         m.innerText = it.msg || "祝福內容"; m.style.color = it.msgC; m.style.fontSize = {md:'14px',lg:'18px',xl:'22px'}[it.msgS];
     }
 
+    function showLoading(txt) { 
+        document.getElementById('load-detail').innerText = txt;
+        document.getElementById('loader').style.display = 'flex'; 
+    }
+    function hideLoading() { document.getElementById('loader').style.display = 'none'; }
+
     async function send() {
-        const b = document.getElementById('go'); b.disabled = true; b.innerText = "🚀 上傳中...";
+        const b = document.getElementById('go'); b.disabled = true; 
+        showLoading("正在準備傳送...");
         try {
             const finalImgs = [];
             for (let i=0; i<items.length; i++) {
                 if (isLocked) {
                     finalImgs.push(items[i].img);
                 } else {
-                    // 切換並獲取最後編輯狀態
                     await switchItem(i);
-                    const blob = await cp.result({ type: 'blob', size: { width: 800 }, format: 'jpeg', quality: 0.75 });
+                    showLoading(`正在處理第 ${i+1} 張照片...`);
+                    const blob = await cp.result({ type: 'blob', size: { width: 800 }, format: 'jpeg', quality: 0.7 });
                     const fd = new FormData();
                     fd.append('file', blob); fd.append('upload_preset', UPLOAD_PRESET);
                     const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`, { method: 'POST', body: fd });
                     const d = await res.json();
+                    if(!d.secure_url) throw new Error("Cloudinary 上傳失敗");
                     finalImgs.push(d.secure_url);
                 }
             }
 
-            // 以第一張的設定作為轉傳參數的預設值
             const f = items[0];
             const shareUrl = `https://liff.line.me/${LIFF_ID}/?imgs=${encodeURIComponent(JSON.stringify(finalImgs))}&to=${encodeURIComponent(f.to)}&msg=${encodeURIComponent(f.msg)}&toS=${f.toS}&msgS=${f.msgS}&toC=${encodeURIComponent(f.toC)}&msgC=${encodeURIComponent(f.msgC)}`;
 
@@ -232,8 +247,13 @@
             }));
 
             await liff.shareTargetPicker([{ "type": "flex", "altText": "收到一組白六賀卡！", "contents": { "type": "carousel", "contents": bubbles } }]);
+            hideLoading();
             liff.closeWindow();
-        } catch (e) { b.disabled = false; b.innerText = "🚀 傳送賀卡"; alert(e.message); }
+        } catch (e) { 
+            hideLoading();
+            b.disabled = false; 
+            alert("傳送失敗: " + e.message); 
+        }
     }
     window.onload = init;
 </script>
