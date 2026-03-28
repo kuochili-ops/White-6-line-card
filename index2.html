@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>𓃥 白六賀卡·終極修復</title>
+    <title>𓃥 白六賀卡·比例修復版</title>
     <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/croppie/2.6.5/croppie.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/croppie/2.6.5/croppie.min.js"></script>
@@ -20,7 +20,7 @@
         .overlay-bottom { position: absolute; bottom: 0; left: 0; right: 0; pointer-events: none; z-index: 10; padding: 30px 20px 20px; background: linear-gradient(0deg, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0) 100%); }
         .btn-upload { width: 100%; padding: 12px; background: #00b900; color: white; border: none; border-radius: 12px; font-weight: bold; cursor: pointer; margin-top: 5px; }
         .thumb-list { display: flex; gap: 8px; overflow-x: auto; padding: 10px 0; min-height: 50px; }
-        .thumb { width: 60px; height: 40px; border-radius: 6px; border: 2px solid #ddd; object-fit: cover; flex-shrink: 0; background: #eee; transition: 0.2s; }
+        .thumb { width: 60px; height: 40px; border-radius: 6px; border: 2px solid #ddd; object-fit: cover; flex-shrink: 0; background: #eee; }
         .thumb.active { border-color: #00b900; transform: scale(1.05); }
         .footer { position: fixed; bottom: 0; left: 0; right: 0; padding: 15px; background: white; z-index: 900; border-top: 1px solid #eee; }
         .btn-send { width: 100%; background: #00b900; color: white; border: none; padding: 18px; border-radius: 20px; font-size: 19px; font-weight: bold; }
@@ -32,7 +32,7 @@
 </head>
 <body>
 
-<div id="loader" class="loading-mask">🪄 影像修復中...</div>
+<div id="loader" class="loading-mask">🪄 比例優化中...</div>
 
 <div id="thumb-menu" class="ctx-menu">
     <button id="menu-replace">📷 更換/重裁照片</button>
@@ -41,7 +41,7 @@
 
 <div class="container">
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:5px;">
-        <span style="font-weight:900; color:#00b900;">𓃥 白六賀卡 · 終極版</span>
+        <span style="font-weight:900; color:#00b900;">𓃥 白六賀卡 · 完美比例版</span>
         <span id="pic-count" style="font-size:12px; color:#aaa;">1 / 1</span>
     </div>
     <div class="thumb-list" id="thumb-container"></div>
@@ -96,7 +96,6 @@
         } catch (e) { console.error(e); }
     }
 
-    // 解決黑屏的核心：強制 fetch 並轉成 Base64
     async function getDataUri(url) {
         if (url.startsWith('data:')) return url;
         try {
@@ -113,26 +112,34 @@
     async function setupCroppie() {
         if(cp) cp.destroy();
         const it = items[activeIdx];
+        
         cp = new Croppie(document.getElementById('cp-wrap'), {
             viewport: { width: 300, height: 195, type: 'square' },
             boundary: { width: '100%', height: '100%' }, 
             showZoomer: !it.isLocked, mouseWheelZoom: !it.isLocked, 
-            enableOrientation: true, enforceBoundary: !it.isLocked
+            enableOrientation: true, 
+            enforceBoundary: !it.isLocked // 修復關鍵1：不強制邊界，避免拉伸放大
         });
         
         document.getElementById('loader').style.display = 'flex';
         const safeData = await getDataUri(it.img);
-        await cp.bind({ url: safeData, zoom: it.isLocked ? 0 : 1 });
         
-        // 修正局部放大：確保圖片載入後強制縮小
+        await cp.bind({ 
+            url: safeData, 
+            zoom: 0 // 修復關鍵2：初始縮放設為 0
+        });
+
+        // 修復關鍵3：針對鎖定照片再次強制縮放，確保寬高比正確計算
         if (it.isLocked) {
-            setTimeout(() => { if(cp) cp.setZoom(0); }, 100);
+            setTimeout(() => { if(cp) cp.setZoom(0); }, 50);
             document.querySelector('.cr-viewport').style.border = 'none';
+            document.getElementById('cp-wrap').style.pointerEvents = 'none';
+        } else {
+            document.getElementById('cp-wrap').style.pointerEvents = 'auto';
         }
         
         document.getElementById('loader').style.display = 'none';
         document.getElementById('status-tag').style.display = it.isLocked ? 'block' : 'none';
-        document.getElementById('cp-wrap').style.pointerEvents = it.isLocked ? 'none' : 'auto';
         updateUI();
     }
 
