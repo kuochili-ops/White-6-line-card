@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>𓃥 白六賀卡·核心修復版</title>
+    <title>𓃥 白六賀卡 · 穩定版</title>
     <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/croppie/2.6.5/croppie.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/croppie/2.6.5/croppie.min.js"></script>
@@ -20,8 +20,8 @@
         .overlay-bottom { position: absolute; bottom: 0; left: 0; right: 0; pointer-events: none; z-index: 10; padding: 30px 20px 20px; background: linear-gradient(0deg, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0) 100%); }
         .btn-upload { width: 100%; padding: 12px; background: #00b900; color: white; border: none; border-radius: 12px; font-weight: bold; cursor: pointer; margin-top: 5px; }
         .thumb-list { display: flex; gap: 8px; overflow-x: auto; padding: 10px 0; min-height: 50px; }
-        .thumb { width: 60px; height: 40px; border-radius: 6px; border: 2px solid #ddd; object-fit: cover; flex-shrink: 0; background: #eee; }
-        .thumb.active { border-color: #00b900; box-shadow: 0 0 5px rgba(0,185,0,0.2); }
+        .thumb { width: 60px; height: 40px; border-radius: 6px; border: 2px solid #ddd; object-fit: cover; flex-shrink: 0; background: #eee; transition: 0.2s; }
+        .thumb.active { border-color: #00b900; transform: scale(1.05); }
         .footer { position: fixed; bottom: 0; left: 0; right: 0; padding: 15px; background: white; z-index: 900; border-top: 1px solid #eee; }
         .btn-send { width: 100%; background: #00b900; color: white; border: none; padding: 18px; border-radius: 20px; font-size: 19px; font-weight: bold; }
         .loading-mask { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(255,255,255,0.95); z-index:1000; flex-direction:column; justify-content:center; align-items:center; color:#00b900; font-weight:bold; }
@@ -32,7 +32,7 @@
 </head>
 <body>
 
-<div id="loader" class="loading-mask">🪄 影像穩定中...</div>
+<div id="loader" class="loading-mask">🪄 影像載入中...</div>
 
 <div id="thumb-menu" class="ctx-menu">
     <button id="menu-replace">📷 更換/重裁照片</button>
@@ -41,7 +41,7 @@
 
 <div class="container">
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:5px;">
-        <span style="font-weight:900; color:#00b900;">𓃥 白六賀卡 · 穩定版</span>
+        <span style="font-weight:900; color:#00b900;">𓃥 白六賀卡</span>
         <span id="pic-count" style="font-size:12px; color:#aaa;">1 / 1</span>
     </div>
     <div class="thumb-list" id="thumb-container"></div>
@@ -76,6 +76,7 @@
 <script>
     const LIFF_ID = '2009222789-bvdxbeSL', CLOUD_NAME = 'dnwwaush7', UPLOAD_PRESET = 'ml_default';
     let cp, activeIdx = 0, currentCtx = 'to', isGlobalLocked = false, isReplacing = false, menuIdx = -1;
+    // 預設第一張卡片
     let items = [{ to:'', msg:'', toS:'xl', msgS:'md', toC:'#ffffff', msgC:'#ffffff', img: 'https://res.cloudinary.com/dnwwaush7/image/upload/v1742950223/image_l9v1yv.png', isLocked: false }];
 
     async function init() {
@@ -85,10 +86,13 @@
             if (p.get('imgs')) {
                 isGlobalLocked = true;
                 const imgUrls = JSON.parse(decodeURIComponent(p.get('imgs')));
+                // 修復關鍵：僅第一張卡片承接 URL 參數中的文字，其餘為空
                 items = imgUrls.map((url, i) => ({
-                    to: i===0 ? (p.get('to')||'') : '', msg: i===0 ? (p.get('msg')||'') : '',
-                    toS: p.get('toS')||'xl', msgS: p.get('msgS')||'md', toC: p.get('toC')||'#ffffff', msgC: p.get('msgC')||'#ffffff', 
-                    img: url.replace('http://', 'https://'), isLocked: true 
+                    to: i === 0 ? (p.get('to') || '') : '', 
+                    msg: i === 0 ? (p.get('msg') || '') : '',
+                    toS: p.get('toS') || 'xl', msgS: p.get('msgS') || 'md', 
+                    toC: p.get('toC') || '#ffffff', msgC: p.get('msgC') || '#ffffff', 
+                    img: url, isLocked: true 
                 }));
                 document.getElementById('btn-up-init').style.display = 'none';
             }
@@ -96,65 +100,25 @@
         } catch (e) { console.error(e); }
     }
 
-    // 終極修復 getDataUri：加入 fallback 機制確保圖片不黑掉
-    async function getDataUri(url) {
-        if (!url || url.startsWith('data:')) return url;
-        const safeUrl = url + (url.includes('?') ? '&' : '?') + 'cache=' + Date.now();
-        
-        try {
-            const response = await fetch(safeUrl, { mode: 'cors' });
-            if (!response.ok) throw new Error('Fetch failed');
-            const blob = await response.blob();
-            return await new Promise((resolve) => {
-                const reader = new FileReader();
-                reader.onloadend = () => resolve(reader.result);
-                reader.readAsDataURL(blob);
-            });
-        } catch (e) {
-            // Fallback：如果 fetch 失敗，改用傳統 Image 對象轉換
-            return new Promise((resolve) => {
-                const img = new Image();
-                img.crossOrigin = "anonymous";
-                img.onload = () => {
-                    const canvas = document.createElement("canvas");
-                    canvas.width = img.width; canvas.height = img.height;
-                    canvas.getContext("2d").drawImage(img, 0, 0);
-                    resolve(canvas.toDataURL("image/jpeg"));
-                };
-                img.onerror = () => resolve(url); // 最後的掙扎：回傳原網址
-                img.src = safeUrl;
-            });
-        }
-    }
-
     async function setupCroppie() {
         if(cp) cp.destroy();
         const it = items[activeIdx];
-        
         cp = new Croppie(document.getElementById('cp-wrap'), {
             viewport: { width: 300, height: 195, type: 'square' },
             boundary: { width: '100%', height: '100%' }, 
-            showZoomer: !it.isLocked, mouseWheelZoom: !it.isLocked, 
-            enableOrientation: true, enforceBoundary: !it.isLocked
+            showZoomer: !it.isLocked, mouseWheelZoom: !it.isLocked, enableOrientation: true, enforceBoundary: !it.isLocked
         });
         
-        document.getElementById('loader').style.display = 'flex';
-        try {
-            const safeData = await getDataUri(it.img);
-            await cp.bind({ url: safeData, zoom: 0 });
-            
-            if (it.isLocked) {
-                // 多重強制縮放，確保不局部放大
-                setTimeout(() => { if(cp) cp.setZoom(0); }, 50);
-                setTimeout(() => { if(cp) cp.setZoom(0); }, 200);
-                document.querySelector('.cr-viewport').style.border = 'none';
-                document.getElementById('cp-wrap').style.pointerEvents = 'none';
-            } else {
-                document.getElementById('cp-wrap').style.pointerEvents = 'auto';
-            }
-        } catch(e) { console.error(e); }
+        // 回退到最穩定的 bind 模式，移除任何額外的 fetch 處理
+        await cp.bind({ url: it.img, zoom: it.isLocked ? 0 : 1 });
         
-        document.getElementById('loader').style.display = 'none';
+        if (it.isLocked) {
+            document.querySelector('.cr-viewport').style.border = 'none';
+            document.getElementById('cp-wrap').style.pointerEvents = 'none';
+        } else {
+            document.getElementById('cp-wrap').style.pointerEvents = 'auto';
+        }
+        
         document.getElementById('status-tag').style.display = it.isLocked ? 'block' : 'none';
         updateUI();
     }
@@ -179,6 +143,7 @@
 
     async function switchItem(idx) {
         if (idx === activeIdx) return;
+        // 如果當前正在編輯，切換前存檔
         if (!items[activeIdx].isLocked && !isGlobalLocked) {
             items[activeIdx].img = await cp.result({ type: 'base64', size: { width: 1200 }, format: 'jpeg' });
             items[activeIdx].isLocked = true;
@@ -207,8 +172,16 @@
         document.getElementById('loader').style.display = 'flex';
         const reader = new FileReader();
         reader.onload = async (e) => {
-            if (isReplacing) { items[menuIdx].img = e.target.result; items[menuIdx].isLocked = false; activeIdx = menuIdx; isReplacing = false; }
-            else { items.push({ ...items[activeIdx], img: e.target.result, to: '', msg: '', isLocked: false }); activeIdx = items.length - 1; }
+            if (isReplacing) { 
+                items[menuIdx].img = e.target.result; 
+                items[menuIdx].isLocked = false; 
+                activeIdx = menuIdx; 
+                isReplacing = false; 
+            } else { 
+                // 新增照片時，文字預設為空
+                items.push({ to: '', msg: '', toS: 'xl', msgS: 'md', toC: '#ffffff', msgC: '#ffffff', img: e.target.result, isLocked: false }); 
+                activeIdx = items.length - 1; 
+            }
             renderThumbs(); await setupCroppie(); document.getElementById('loader').style.display = 'none';
         };
         reader.readAsDataURL(input.files[0]);
@@ -224,8 +197,8 @@
     }
     function updateUI() {
         const it = items[activeIdx], t = document.getElementById('p-to'), m = document.getElementById('p-msg');
-        t.innerText = it.to || "名字"; t.style.color = it.toC; t.style.fontSize = { md:'18px', lg:'24px', xl:'30px' }[it.toS];
-        m.innerText = it.msg || "祝福內容"; m.style.color = it.msgC; m.style.fontSize = { md:'14px', lg:'18px', xl:'22px' }[it.msgS];
+        t.innerText = it.to || " "; t.style.color = it.toC; t.style.fontSize = { md:'18px', lg:'24px', xl:'30px' }[it.toS];
+        m.innerText = it.msg || " "; m.style.color = it.msgC; m.style.fontSize = { md:'14px', lg:'18px', xl:'22px' }[it.msgS];
         document.getElementById('v-size').value = currentCtx === 'to' ? it.toS : it.msgS;
         document.getElementById('v-color').value = currentCtx === 'to' ? it.toC : it.msgC;
     }
@@ -242,7 +215,7 @@
                         method: 'POST', headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ file: imgData, upload_preset: UPLOAD_PRESET })
                     });
-                    const d = await res.json(); finalImgs.push(d.secure_url.replace('http://', 'https://'));
+                    const d = await res.json(); finalImgs.push(d.secure_url);
                 }
             }
             const f = items[0], shareUrl = `https://liff.line.me/${LIFF_ID}/?imgs=${encodeURIComponent(JSON.stringify(finalImgs))}&to=${encodeURIComponent(f.to)}&msg=${encodeURIComponent(f.msg)}&toS=${f.toS}&msgS=${f.msgS}&toC=${encodeURIComponent(f.toC)}&msgC=${encodeURIComponent(f.msgC)}`;
