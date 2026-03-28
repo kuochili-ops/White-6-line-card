@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>𓃥 白六賀卡·旗艦版</title>
+    <title>𓃥 白六賀卡·旗艦修復版</title>
     <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/croppie/2.6.5/croppie.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/croppie/2.6.5/croppie.min.js"></script>
@@ -17,18 +17,15 @@
         input, textarea, select { width: 100%; padding: 7px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; margin-bottom: 5px; outline: none; }
         .stage { margin: 10px 0; border: 4px solid #00b900; border-radius: 22px; overflow: hidden; position: relative; background: #1a1a1a; aspect-ratio: 20/13; }
         #cp-wrap { width: 100%; height: 100%; }
-        
         .overlay-bottom { position: absolute; bottom: 0; left: 0; right: 0; pointer-events: none; z-index: 10; padding: 30px 20px 20px; background: linear-gradient(0deg, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0) 100%); }
         .btn-upload { width: 100%; padding: 12px; background: #00b900; color: white; border: none; border-radius: 12px; font-weight: bold; cursor: pointer; margin-top: 5px; }
         .thumb-list { display: flex; gap: 8px; overflow-x: auto; padding: 10px 0; min-height: 50px; }
         .thumb { width: 60px; height: 40px; border-radius: 6px; border: 2px solid #ddd; object-fit: cover; flex-shrink: 0; background: #eee; }
         .thumb.active { border-color: #00b900; box-shadow: 0 0 5px rgba(0,185,0,0.3); }
-        
         .footer { position: fixed; bottom: 0; left: 0; right: 0; padding: 15px; background: white; z-index: 900; border-top: 1px solid #eee; }
         .btn-send { width: 100%; background: #00b900; color: white; border: none; padding: 18px; border-radius: 20px; font-size: 19px; font-weight: bold; }
         .loading-mask { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(255,255,255,0.95); z-index:1000; flex-direction:column; justify-content:center; align-items:center; color:#00b900; font-weight:bold; }
         .locked-tag { position: absolute; top: 12px; right: 12px; background: #ff9800; color: white; padding: 4px 10px; border-radius: 20px; font-size: 11px; z-index: 20; font-weight: bold; pointer-events: none; }
-        
         .ctx-menu { display: none; position: fixed; background: white; border-radius: 12px; box-shadow: 0 5px 20px rgba(0,0,0,0.2); z-index: 2000; padding: 5px; min-width: 150px; }
         .ctx-menu button { display: block; width: 100%; text-align: left; background: none; border: none; padding: 12px 15px; font-size: 14px; border-radius: 8px; cursor: pointer; }
         .ctx-menu button.del { color: #ff4d4f; }
@@ -45,7 +42,7 @@
 
 <div class="container">
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:5px;">
-        <span style="font-weight:900; color:#00b900;">𓃥 白六賀卡 · 旗艦高清版</span>
+        <span style="font-weight:900; color:#00b900;">𓃥 白六賀卡 · 旗艦修復版</span>
         <span id="pic-count" style="font-size:12px; color:#aaa;">1 / 1</span>
     </div>
 
@@ -116,7 +113,8 @@
             img.onload = () => {
                 const cvs = document.createElement('canvas');
                 cvs.width = img.width; cvs.height = img.height;
-                cvs.getContext('2d').drawImage(img, 0, 0);
+                const ctx = cvs.getContext('2d');
+                ctx.drawImage(img, 0, 0);
                 resolve(cvs.toDataURL("image/jpeg", 0.9));
             };
             img.onerror = () => resolve(url);
@@ -132,17 +130,18 @@
             boundary: { width: '100%', height: '100%' }, 
             showZoomer: !it.isLocked, mouseWheelZoom: !it.isLocked, 
             enableOrientation: true,
-            enforceBoundary: !it.isLocked // 鎖定時不強制邊界，方便完整呈現
+            enforceBoundary: !it.isLocked
         });
         
+        document.getElementById('loader').style.display = 'flex';
         const displayImg = it.img.startsWith('data:') ? it.img : await getSafeImg(it.img);
         
-        // 關鍵修復：鎖定時強制 zoom 為 0 (最小比例完整顯示)
         await cp.bind({ 
             url: displayImg, 
             zoom: it.isLocked ? 0 : 1 
         });
         
+        document.getElementById('loader').style.display = 'none';
         document.getElementById('status-tag').style.display = it.isLocked ? 'block' : 'none';
         document.getElementById('cp-wrap').style.pointerEvents = it.isLocked ? 'none' : 'auto';
         updateUI();
@@ -237,7 +236,7 @@
                     const d = await res.json(); finalImgs.push(d.secure_url.replace('http://', 'https://'));
                 }
             }
-            const f = items[0], shareUrl = `https://liff.me/${LIFF_ID}/?imgs=${encodeURIComponent(JSON.stringify(finalImgs))}&to=${encodeURIComponent(f.to)}&msg=${encodeURIComponent(f.msg)}&toS=${f.toS}&msgS=${f.msgS}&toC=${encodeURIComponent(f.toC)}&msgC=${encodeURIComponent(f.msgC)}`;
+            const f = items[0], shareUrl = `https://liff.line.me/${LIFF_ID}/?imgs=${encodeURIComponent(JSON.stringify(finalImgs))}&to=${encodeURIComponent(f.to)}&msg=${encodeURIComponent(f.msg)}&toS=${f.toS}&msgS=${f.msgS}&toC=${encodeURIComponent(f.toC)}&msgC=${encodeURIComponent(f.msgC)}`;
             const bubbles = finalImgs.map((url, i) => ({
                 "type": "bubble", "size": "mega",
                 "body": {
