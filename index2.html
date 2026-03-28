@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>𓃥 白六賀卡·清爽版</title>
+    <title>𓃥 白六賀卡 · 修復版</title>
     <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/croppie/2.6.5/croppie.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/croppie/2.6.5/croppie.min.js"></script>
@@ -25,7 +25,6 @@
         .footer { position: fixed; bottom: 0; left: 0; right: 0; padding: 15px; background: white; z-index: 900; border-top: 1px solid #eee; }
         .btn-send { width: 100%; background: #00b900; color: white; border: none; padding: 18px; border-radius: 20px; font-size: 19px; font-weight: bold; }
         .loading-mask { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(255,255,255,0.95); z-index:1000; flex-direction:column; justify-content:center; align-items:center; color:#00b900; font-weight:bold; }
-        /* .locked-tag 已移除 */
         .ctx-menu { display: none; position: fixed; background: white; border-radius: 12px; box-shadow: 0 5px 20px rgba(0,0,0,0.2); z-index: 2000; padding: 5px; min-width: 150px; }
         .ctx-menu button { display: block; width: 100%; text-align: left; background: none; border: none; padding: 12px 15px; font-size: 14px; border-radius: 8px; }
     </style>
@@ -85,7 +84,8 @@
                 isGlobalLocked = true;
                 const imgUrls = JSON.parse(decodeURIComponent(p.get('imgs')));
                 items = imgUrls.map((url, i) => ({
-                    to: i===0 ? (p.get('to')||'') : '', msg: i===0 ? (p.get('msg')||'') : '',
+                    to: i===0 ? (p.get('to')||'') : '', 
+                    msg: i===0 ? (p.get('msg')||'') : '',
                     toS: p.get('toS')||'xl', msgS: p.get('msgS')||'md', toC: p.get('toC')||'#ffffff', msgC: p.get('msgC')||'#ffffff', 
                     img: url, isLocked: true 
                 }));
@@ -95,51 +95,41 @@
         } catch (e) { console.error("Init Error:", e); }
     }
 
-    async function getDataUri(url) {
-        if (!url || url.startsWith('data:')) return url;
-        return new Promise((resolve) => {
-            const img = new Image();
-            img.crossOrigin = "Anonymous"; 
-            img.onload = function() {
-                const canvas = document.createElement('canvas');
-                canvas.width = this.width;
-                canvas.height = this.height;
-                const ctx = canvas.getContext('2d');
-                ctx.drawImage(this, 0, 0);
-                resolve(canvas.toDataURL('image/jpeg'));
-            };
-            img.onerror = () => resolve(url);
-            img.src = url + (url.includes('?') ? '&' : '?') + 'cors=' + Date.now();
-        });
-    }
-
     async function setupCroppie() {
         if(cp) cp.destroy();
         const it = items[activeIdx];
         
+        // 核心修正：針對 Cloudinary 網址加上強制 CORS 參數，並使用 Croppie 原生機制處理
+        let finalImg = it.img;
+        if (finalImg.includes('cloudinary.com')) {
+            finalImg = it.img + (it.img.includes('?') ? '&' : '?') + 'timestamp=' + Date.now();
+        }
+
         cp = new Croppie(document.getElementById('cp-wrap'), {
             viewport: { width: 300, height: 195, type: 'square' },
             boundary: { width: '100%', height: '100%' }, 
             showZoomer: !it.isLocked, mouseWheelZoom: !it.isLocked, 
-            enableOrientation: true, enforceBoundary: !it.isLocked
+            enableOrientation: true, enforceBoundary: !it.isLocked,
+            enableExif: true // 確保手機拍攝照片角度正確
         });
         
         document.getElementById('loader').style.display = 'flex';
         try {
-            const safeData = await getDataUri(it.img);
-            await cp.bind({ url: safeData, zoom: 0 });
+            // 直接 bind 帶有時間戳的網址，不經過複雜轉換
+            await cp.bind({ url: finalImg, zoom: 0 });
             
             if (it.isLocked) {
-                setTimeout(() => { if(cp) cp.setZoom(0); }, 50);
+                // 如果是鎖定狀態，強行設置為 0 (全圖顯示)
+                setTimeout(() => { if(cp) cp.setZoom(0); }, 100);
                 document.querySelector('.cr-viewport').style.border = 'none';
                 document.getElementById('cp-wrap').style.pointerEvents = 'none';
             } else {
                 document.getElementById('cp-wrap').style.pointerEvents = 'auto';
+                document.querySelector('.cr-viewport').style.border = '1px solid white';
             }
         } catch(e) { console.error("Bind Error:", e); }
         
         document.getElementById('loader').style.display = 'none';
-        // status-tag 控制已移除
         updateUI();
     }
 
@@ -163,9 +153,12 @@
 
     async function switchItem(idx) {
         if (idx === activeIdx) return;
+        // 如果目前不是快速轉傳鎖定狀態，切換前存檔
         if (!items[activeIdx].isLocked && !isGlobalLocked) {
-            items[activeIdx].img = await cp.result({ type: 'base64', size: { width: 1200 }, format: 'jpeg' });
-            items[activeIdx].isLocked = true;
+            try {
+                items[activeIdx].img = await cp.result({ type: 'base64', size: { width: 1200 }, format: 'jpeg' });
+                items[activeIdx].isLocked = true;
+            } catch(e) { console.warn("Switch Save Fail:", e); }
         }
         activeIdx = idx;
         document.getElementById('v-to').value = items[idx].to;
@@ -192,7 +185,11 @@
         const reader = new FileReader();
         reader.onload = async (e) => {
             if (isReplacing) { items[menuIdx].img = e.target.result; items[menuIdx].isLocked = false; activeIdx = menuIdx; isReplacing = false; }
-            else { items.push({ ...items[activeIdx], img: e.target.result, to: '', msg: '', isLocked: false }); activeIdx = items.length - 1; }
+            else { 
+                // 新增照片時，文字內容依照需求預設為空白
+                items.push({ to: '', msg: '', toS: 'xl', msgS: 'md', toC: '#ffffff', msgC: '#ffffff', img: e.target.result, isLocked: false }); 
+                activeIdx = items.length - 1; 
+            }
             renderThumbs(); await setupCroppie(); document.getElementById('loader').style.display = 'none';
         };
         reader.readAsDataURL(input.files[0]);
@@ -208,8 +205,8 @@
     }
     function updateUI() {
         const it = items[activeIdx], t = document.getElementById('p-to'), m = document.getElementById('p-msg');
-        t.innerText = it.to || "名字"; t.style.color = it.toC; t.style.fontSize = { md:'18px', lg:'24px', xl:'30px' }[it.toS];
-        m.innerText = it.msg || "祝福內容"; m.style.color = it.msgC; m.style.fontSize = { md:'14px', lg:'18px', xl:'22px' }[it.msgS];
+        t.innerText = it.to || " "; t.style.color = it.toC; t.style.fontSize = { md:'18px', lg:'24px', xl:'30px' }[it.toS];
+        m.innerText = it.msg || " "; m.style.color = it.msgC; m.style.fontSize = { md:'14px', lg:'18px', xl:'22px' }[it.msgS];
         document.getElementById('v-size').value = currentCtx === 'to' ? it.toS : it.msgS;
         document.getElementById('v-color').value = currentCtx === 'to' ? it.toC : it.msgC;
     }
@@ -219,14 +216,16 @@
         try {
             const finalImgs = [];
             for (let i=0; i<items.length; i++) {
-                if (isGlobalLocked) { finalImgs.push(items[i].img); }
-                else {
+                if (isGlobalLocked) { 
+                    finalImgs.push(items[i].img); 
+                } else {
                     const imgData = (i === activeIdx) ? await cp.result({ type: 'base64', size: { width: 1200 }, format: 'jpeg' }) : items[i].img;
                     const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`, {
                         method: 'POST', headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ file: imgData, upload_preset: UPLOAD_PRESET })
                     });
-                    const d = await res.json(); finalImgs.push(d.secure_url);
+                    const d = await res.json(); 
+                    finalImgs.push(d.secure_url);
                 }
             }
             const f = items[0], shareUrl = `https://liff.line.me/${LIFF_ID}/?imgs=${encodeURIComponent(JSON.stringify(finalImgs))}&to=${encodeURIComponent(f.to)}&msg=${encodeURIComponent(f.msg)}&toS=${f.toS}&msgS=${f.msgS}&toC=${encodeURIComponent(f.toC)}&msgC=${encodeURIComponent(f.msgC)}`;
