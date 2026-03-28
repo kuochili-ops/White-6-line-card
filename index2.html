@@ -17,32 +17,35 @@
         input, textarea, select { width: 100%; padding: 7px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; margin-bottom: 5px; outline: none; }
         .stage { margin: 10px 0; border: 4px solid #00b900; border-radius: 22px; overflow: hidden; position: relative; background: #1a1a1a; aspect-ratio: 20/13; }
         #cp-wrap { width: 100%; height: 100%; }
+        
         .overlay-bottom { position: absolute; bottom: 0; left: 0; right: 0; pointer-events: none; z-index: 10; padding: 30px 20px 20px; background: linear-gradient(0deg, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0) 100%); }
         .btn-upload { width: 100%; padding: 12px; background: #00b900; color: white; border: none; border-radius: 12px; font-weight: bold; cursor: pointer; margin-top: 5px; }
         .thumb-list { display: flex; gap: 8px; overflow-x: auto; padding: 10px 0; min-height: 50px; }
         .thumb { width: 60px; height: 40px; border-radius: 6px; border: 2px solid #ddd; object-fit: cover; flex-shrink: 0; background: #eee; }
         .thumb.active { border-color: #00b900; box-shadow: 0 0 5px rgba(0,185,0,0.3); }
+        
         .footer { position: fixed; bottom: 0; left: 0; right: 0; padding: 15px; background: white; z-index: 900; border-top: 1px solid #eee; }
         .btn-send { width: 100%; background: #00b900; color: white; border: none; padding: 18px; border-radius: 20px; font-size: 19px; font-weight: bold; }
         .loading-mask { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(255,255,255,0.95); z-index:1000; flex-direction:column; justify-content:center; align-items:center; color:#00b900; font-weight:bold; }
-        .locked-tag { position: absolute; top: 12px; right: 12px; background: #ff9800; color: white; padding: 4px 10px; border-radius: 20px; font-size: 11px; z-index: 20; font-weight: bold; }
+        .locked-tag { position: absolute; top: 12px; right: 12px; background: #ff9800; color: white; padding: 4px 10px; border-radius: 20px; font-size: 11px; z-index: 20; font-weight: bold; pointer-events: none; }
+        
         .ctx-menu { display: none; position: fixed; background: white; border-radius: 12px; box-shadow: 0 5px 20px rgba(0,0,0,0.2); z-index: 2000; padding: 5px; min-width: 150px; }
-        .ctx-menu button { display: block; width: 100%; text-align: left; background: none; border: none; padding: 12px 15px; font-size: 14px; border-radius: 8px; }
+        .ctx-menu button { display: block; width: 100%; text-align: left; background: none; border: none; padding: 12px 15px; font-size: 14px; border-radius: 8px; cursor: pointer; }
         .ctx-menu button.del { color: #ff4d4f; }
     </style>
 </head>
 <body>
 
-<div id="loader" class="loading-mask">🪄 影像處理中...</div>
+<div id="loader" class="loading-mask">🪄 影像優化中...</div>
 
 <div id="thumb-menu" class="ctx-menu">
-    <button id="menu-replace">📷 更換照片/重裁</button>
+    <button id="menu-replace">📷 更換/重裁照片</button>
     <button id="menu-del" class="del">🗑️ 刪除這張</button>
 </div>
 
 <div class="container">
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:5px;">
-        <span style="font-weight:900; color:#00b900;">𓃥 白六賀卡 · 轉傳優化版</span>
+        <span style="font-weight:900; color:#00b900;">𓃥 白六賀卡 · 旗艦高清版</span>
         <span id="pic-count" style="font-size:12px; color:#aaa;">1 / 1</span>
     </div>
 
@@ -91,29 +94,17 @@
             if (p.get('imgs')) {
                 isGlobalLocked = true;
                 const imgUrls = JSON.parse(decodeURIComponent(p.get('imgs')));
-                
-                // 關鍵優化邏輯：
-                items = imgUrls.map((url, index) => {
-                    const isFirst = (index === 0);
-                    return {
-                        // 第一張繼承文字內容，其餘清空
-                        to: isFirst ? (p.get('to') || '') : '', 
-                        msg: isFirst ? (p.get('msg') || '') : '',
-                        // 字體規格全部繼承
-                        toS: p.get('toS') || 'xl', 
-                        msgS: p.get('msgS') || 'md', 
-                        toC: p.get('toC') || '#ffffff', 
-                        msgC: p.get('msgC') || '#ffffff', 
-                        img: url.replace('http://', 'https://'), 
-                        isLocked: true 
-                    };
-                });
-                
+                items = imgUrls.map((url, i) => ({
+                    to: i === 0 ? (p.get('to') || '') : '', 
+                    msg: i === 0 ? (p.get('msg') || '') : '',
+                    toS: p.get('toS') || 'xl', msgS: p.get('msgS') || 'md', 
+                    toC: p.get('toC') || '#ffffff', msgC: p.get('msgC') || '#ffffff', 
+                    img: url.replace('http://', 'https://'), isLocked: true 
+                }));
                 document.getElementById('btn-up-init').style.display = 'none';
                 document.getElementById('v-to').value = items[0].to;
                 document.getElementById('v-msg').value = items[0].msg;
             }
-            
             setupCroppie(); renderThumbs(); setupMenu();
         } catch (e) { console.error(e); }
     }
@@ -139,11 +130,18 @@
         cp = new Croppie(document.getElementById('cp-wrap'), {
             viewport: { width: 300, height: 195, type: 'square' },
             boundary: { width: '100%', height: '100%' }, 
-            showZoomer: !it.isLocked, mouseWheelZoom: !it.isLocked, enableOrientation: true
+            showZoomer: !it.isLocked, mouseWheelZoom: !it.isLocked, 
+            enableOrientation: true,
+            enforceBoundary: !it.isLocked // 鎖定時不強制邊界，方便完整呈現
         });
         
         const displayImg = it.img.startsWith('data:') ? it.img : await getSafeImg(it.img);
-        cp.bind({ url: displayImg, zoom: 1 });
+        
+        // 關鍵修復：鎖定時強制 zoom 為 0 (最小比例完整顯示)
+        await cp.bind({ 
+            url: displayImg, 
+            zoom: it.isLocked ? 0 : 1 
+        });
         
         document.getElementById('status-tag').style.display = it.isLocked ? 'block' : 'none';
         document.getElementById('cp-wrap').style.pointerEvents = it.isLocked ? 'none' : 'auto';
@@ -177,7 +175,7 @@
         activeIdx = idx;
         document.getElementById('v-to').value = items[idx].to;
         document.getElementById('v-msg').value = items[idx].msg;
-        renderThumbs(); setupCroppie();
+        renderThumbs(); await setupCroppie();
     }
 
     function setupMenu() {
@@ -209,7 +207,6 @@
     }
 
     function setCtx(ctx) { currentCtx = ctx; document.getElementById('focus-tag').innerText = ctx==='to'?'編輯姓名':'編輯內容'; updateUI(); }
-    
     function update() {
         const it = items[activeIdx];
         it.to = document.getElementById('v-to').value; it.msg = document.getElementById('v-msg').value;
@@ -217,7 +214,6 @@
         else { it.msgS = document.getElementById('v-size').value; it.msgC = document.getElementById('v-color').value; }
         updateUI();
     }
-
     function updateUI() {
         const it = items[activeIdx], t = document.getElementById('p-to'), m = document.getElementById('p-msg');
         t.innerText = it.to || "名字"; t.style.color = it.toC; t.style.fontSize = { md:'18px', lg:'24px', xl:'30px' }[it.toS];
@@ -241,7 +237,7 @@
                     const d = await res.json(); finalImgs.push(d.secure_url.replace('http://', 'https://'));
                 }
             }
-            const f = items[0], shareUrl = `https://liff.line.me/${LIFF_ID}/?imgs=${encodeURIComponent(JSON.stringify(finalImgs))}&to=${encodeURIComponent(f.to)}&msg=${encodeURIComponent(f.msg)}&toS=${f.toS}&msgS=${f.msgS}&toC=${encodeURIComponent(f.toC)}&msgC=${encodeURIComponent(f.msgC)}`;
+            const f = items[0], shareUrl = `https://liff.me/${LIFF_ID}/?imgs=${encodeURIComponent(JSON.stringify(finalImgs))}&to=${encodeURIComponent(f.to)}&msg=${encodeURIComponent(f.msg)}&toS=${f.toS}&msgS=${f.msgS}&toC=${encodeURIComponent(f.toC)}&msgC=${encodeURIComponent(f.msgC)}`;
             const bubbles = finalImgs.map((url, i) => ({
                 "type": "bubble", "size": "mega",
                 "body": {
@@ -261,7 +257,7 @@
             }));
             await liff.shareTargetPicker([{ "type": "flex", "altText": "🎁 收到白六賀卡！", "contents": { "type": "carousel", "contents": bubbles.slice(0, 10) } }]);
             liff.closeWindow();
-        } catch (e) { alert("失敗：" + e.message); b.disabled = false; document.getElementById('loader').style.display = 'none'; }
+        } catch (e) { alert("傳送失敗：" + e.message); b.disabled = false; document.getElementById('loader').style.display = 'none'; }
     }
     window.onload = init;
 </script>
