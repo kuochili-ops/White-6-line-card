@@ -3,54 +3,41 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>𓃥 白六賀卡 · 修復版</title>
+    <title>𓃥 白六賀卡 · 旗艦版</title>
     <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/croppie/2.6.5/croppie.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/croppie/2.6.5/croppie.min.js"></script>
     <style>
-        body { font-family: -apple-system, "Noto Sans TC", sans-serif; background-color: #f8f9fa; margin: 0; padding: 10px; padding-bottom: 120px; -webkit-tap-highlight-color: transparent; }
-        .container { max-width: 500px; margin: 0 auto; background: white; padding: 15px; border-radius: 28px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); }
-        .editor-box { display: flex; gap: 10px; margin-bottom: 12px; background: #fafafa; padding: 12px; border-radius: 20px; border: 1px solid #eee; }
+        body { font-family: -apple-system, "Noto Sans TC", sans-serif; background-color: #f8f9fa; margin: 0; padding: 12px; padding-bottom: 100px; -webkit-tap-highlight-color: transparent; }
+        .container { max-width: 500px; margin: 0 auto; background: white; padding: 20px; border-radius: 30px; box-shadow: 0 15px 35px rgba(0,0,0,0.08); }
+        .editor-box { display: flex; gap: 12px; margin-bottom: 15px; background: #fcfcfc; padding: 15px; border-radius: 20px; border: 1px solid #eee; }
         .input-main { flex: 2; }
-        .input-style { flex: 1.1; border-left: 2.5px solid #00b900; padding-left: 10px; }
-        label { font-size: 10px; color: #bbb; font-weight: bold; display: block; margin-bottom: 2px; }
-        input, textarea, select { width: 100%; padding: 7px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; margin-bottom: 5px; outline: none; }
-        .stage { margin: 10px 0; border: 4px solid #00b900; border-radius: 22px; overflow: hidden; position: relative; background: #000; aspect-ratio: 20/13; }
+        .input-style { flex: 1.1; border-left: 3px solid #00b900; padding-left: 12px; }
+        label { font-size: 11px; color: #999; font-weight: bold; display: block; margin-bottom: 4px; }
+        input, textarea, select { width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 10px; font-size: 15px; margin-bottom: 8px; outline: none; }
+        .stage { margin: 15px 0; border: 4px solid #00b900; border-radius: 25px; overflow: hidden; position: relative; background: #000; aspect-ratio: 20/13; }
         #cp-wrap { width: 100%; height: 100%; }
         .overlay-bottom { position: absolute; bottom: 0; left: 0; right: 0; pointer-events: none; z-index: 10; padding: 30px 20px 20px; background: linear-gradient(0deg, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0) 100%); }
+        .p-to { display:block; font-weight:bold; }
+        .p-msg { display:block; line-height: 1.4; margin-top: 4px; }
         .btn-upload { width: 100%; padding: 12px; background: #00b900; color: white; border: none; border-radius: 12px; font-weight: bold; cursor: pointer; margin-top: 5px; }
-        .thumb-list { display: flex; gap: 8px; overflow-x: auto; padding: 10px 0; min-height: 50px; }
-        .thumb { width: 60px; height: 40px; border-radius: 6px; border: 2px solid #ddd; object-fit: cover; flex-shrink: 0; background: #eee; }
-        .thumb.active { border-color: #00b900; }
         .footer { position: fixed; bottom: 0; left: 0; right: 0; padding: 15px; background: white; z-index: 900; border-top: 1px solid #eee; }
-        .btn-send { width: 100%; background: #00b900; color: white; border: none; padding: 18px; border-radius: 20px; font-size: 19px; font-weight: bold; }
-        .loading-mask { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(255,255,255,0.95); z-index:1000; flex-direction:column; justify-content:center; align-items:center; color:#00b900; font-weight:bold; }
-        .ctx-menu { display: none; position: fixed; background: white; border-radius: 12px; box-shadow: 0 5px 20px rgba(0,0,0,0.2); z-index: 2000; padding: 5px; min-width: 150px; }
-        .ctx-menu button { display: block; width: 100%; text-align: left; background: none; border: none; padding: 12px 15px; font-size: 14px; border-radius: 8px; }
+        .btn-send { width: 100%; background: #00b900; color: white; border: none; padding: 18px; border-radius: 20px; font-size: 19px; font-weight: bold; box-shadow: 0 8px 20px rgba(0,185,0,0.15); }
+        .loading-mask { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(255,255,255,0.9); z-index:1000; flex-direction:column; justify-content:center; align-items:center; color:#00b900; font-weight:bold; }
     </style>
 </head>
 <body>
 
-<div id="loader" class="loading-mask">🪄 影像載入中...</div>
-
-<div id="thumb-menu" class="ctx-menu">
-    <button id="menu-replace">📷 更換/重裁照片</button>
-    <button id="menu-del" style="color:#ff4d4f;">🗑️ 刪除這張</button>
-</div>
+<div id="loader" class="loading-mask">🪄 影像處理中...</div>
 
 <div class="container">
-    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:5px;">
-        <span style="font-weight:900; color:#00b900;">𓃥 白六賀卡</span>
-        <span id="pic-count" style="font-size:12px; color:#aaa;">1 / 1</span>
-    </div>
-    <div class="thumb-list" id="thumb-container"></div>
     <div class="editor-box">
         <div class="input-main">
             <label>名字</label>
             <input type="text" id="v-to" placeholder="收件人" oninput="update()" onfocus="setCtx('to')">
             <label>祝福</label>
-            <textarea id="v-msg" rows="2" placeholder="想說的話" oninput="update()" onfocus="setCtx('msg')"></textarea>
-            <button id="btn-up-init" class="btn-upload" onclick="document.getElementById('f-in').click()">📷 新增照片</button>
+            <textarea id="v-msg" rows="2" placeholder="內容" oninput="update()" onfocus="setCtx('msg')"></textarea>
+            <button id="btn-pic" class="btn-upload" onclick="document.getElementById('f-in').click()">📷 更換照片</button>
             <input type="file" id="f-in" hidden accept="image/*" onchange="handleFile(this)">
         </div>
         <div class="input-style">
@@ -61,194 +48,148 @@
             <input type="color" id="v-color" value="#ffffff" onchange="update()">
         </div>
     </div>
+
     <div class="stage">
         <div id="cp-wrap"></div>
         <div class="overlay-bottom">
-            <div id="p-to" style="font-weight:bold;">名字</div>
-            <div id="p-msg" style="line-height:1.4; margin-top:4px;">祝福內容</div>
+            <div id="p-to" class="p-to">名字</div>
+            <div id="p-msg" class="p-msg">祝福內容</div>
         </div>
     </div>
 </div>
-<div class="footer"><button id="go" class="btn-send" onclick="send()">🚀 傳送賀卡</button></div>
+
+<div class="footer">
+    <button id="go" class="btn-send" onclick="send()">🚀 傳送賀卡</button>
+</div>
 
 <script>
+    // 已更新為您提供的 LIFF ID
     const LIFF_ID = '2009222789-bvdxbeSL', CLOUD_NAME = 'dnwwaush7', UPLOAD_PRESET = 'ml_default';
-    let cp, activeIdx = 0, currentCtx = 'to', isGlobalLocked = false, isReplacing = false, menuIdx = -1;
-    let items = [{ to:'', msg:'', toS:'xl', msgS:'md', toC:'#ffffff', msgC:'#ffffff', img: 'https://res.cloudinary.com/dnwwaush7/image/upload/v1742950223/image_l9v1yv.png', isLocked: false }];
+    let cp, currentCtx = 'to', isLocked = false;
+    let card = { to:'', msg:'', toS:'xl', msgS:'md', toC:'#ffffff', msgC:'#ffffff', img: 'https://res.cloudinary.com/dnwwaush7/image/upload/v1742950223/image_l9v1yv.png' };
 
     async function init() {
         try {
             await liff.init({ liffId: LIFF_ID });
             const p = new URLSearchParams(window.location.search);
-            if (p.get('imgs')) {
-                isGlobalLocked = true;
-                const imgUrls = JSON.parse(decodeURIComponent(p.get('imgs')));
-                items = imgUrls.map((url, i) => ({
-                    to: i===0 ? (p.get('to')||'') : '', 
-                    msg: i===0 ? (p.get('msg')||'') : '',
-                    toS: p.get('toS')||'xl', msgS: p.get('msgS')||'md', toC: p.get('toC')||'#ffffff', msgC: p.get('msgC')||'#ffffff', 
-                    img: url, isLocked: true 
-                }));
-                document.getElementById('btn-up-init').style.display = 'none';
-            }
-            await setupCroppie(); renderThumbs(); setupMenu();
-        } catch (e) { console.error("Init Error:", e); }
-    }
-
-    async function setupCroppie() {
-        if(cp) cp.destroy();
-        const it = items[activeIdx];
-        
-        // 核心修正：針對 Cloudinary 網址加上強制 CORS 參數，並使用 Croppie 原生機制處理
-        let finalImg = it.img;
-        if (finalImg.includes('cloudinary.com')) {
-            finalImg = it.img + (it.img.includes('?') ? '&' : '?') + 'timestamp=' + Date.now();
-        }
-
-        cp = new Croppie(document.getElementById('cp-wrap'), {
-            viewport: { width: 300, height: 195, type: 'square' },
-            boundary: { width: '100%', height: '100%' }, 
-            showZoomer: !it.isLocked, mouseWheelZoom: !it.isLocked, 
-            enableOrientation: true, enforceBoundary: !it.isLocked,
-            enableExif: true // 確保手機拍攝照片角度正確
-        });
-        
-        document.getElementById('loader').style.display = 'flex';
-        try {
-            // 直接 bind 帶有時間戳的網址，不經過複雜轉換
-            await cp.bind({ url: finalImg, zoom: 0 });
             
-            if (it.isLocked) {
-                // 如果是鎖定狀態，強行設置為 0 (全圖顯示)
+            if (p.get('img')) {
+                isLocked = true;
+                card = {
+                    img: p.get('img'), to: p.get('to')||'', msg: p.get('msg')||'',
+                    toS: p.get('toS')||'xl', msgS: p.get('msgS')||'md',
+                    toC: p.get('toC')||'#ffffff', msgC: p.get('msgC')||'#ffffff'
+                };
+                document.getElementById('v-to').value = card.to;
+                document.getElementById('v-msg').value = card.msg;
+                document.getElementById('btn-pic').style.display = 'none'; 
+            }
+
+            cp = new Croppie(document.getElementById('cp-wrap'), {
+                viewport: { width: 300, height: 195, type: 'square' },
+                boundary: { width: '100%', height: '100%' }, 
+                showZoomer: !isLocked, 
+                mouseWheelZoom: !isLocked,
+                enforceBoundary: !isLocked
+            });
+            
+            const finalSrc = card.img.includes('?') ? `${card.img}&t=${Date.now()}` : `${card.img}?t=${Date.now()}`;
+            await cp.bind({ url: finalSrc });
+            
+            if (isLocked) {
                 setTimeout(() => { if(cp) cp.setZoom(0); }, 100);
-                document.querySelector('.cr-viewport').style.border = 'none';
                 document.getElementById('cp-wrap').style.pointerEvents = 'none';
-            } else {
-                document.getElementById('cp-wrap').style.pointerEvents = 'auto';
-                document.querySelector('.cr-viewport').style.border = '1px solid white';
+                document.querySelector('.cr-viewport').style.border = 'none';
             }
-        } catch(e) { console.error("Bind Error:", e); }
-        
-        document.getElementById('loader').style.display = 'none';
-        updateUI();
+            updateUI();
+        } catch (e) { console.error(e); }
     }
 
-    function renderThumbs() {
-        const c = document.getElementById('thumb-container');
-        c.innerHTML = items.map((it, i) => `<img src="${it.img}" class="thumb ${i===activeIdx?'active':''}" data-index="${i}">`).join('');
-        document.querySelectorAll('.thumb').forEach(thumb => {
-            let timer = null;
-            thumb.onclick = (e) => {
-                const idx = parseInt(e.target.dataset.index);
-                if (timer) {
-                    clearTimeout(timer); timer = null;
-                    if (!isGlobalLocked) showContextMenu(e, idx);
-                } else {
-                    timer = setTimeout(() => { switchItem(idx); timer = null; }, 250);
-                }
-            };
-        });
-        document.getElementById('pic-count').innerText = `${activeIdx + 1} / ${items.length}`;
+    function setCtx(ctx) { 
+        currentCtx = ctx; 
+        document.getElementById('focus-tag').innerText = ctx==='to'?'編輯姓名':'編輯內容';
+        update(); 
     }
-
-    async function switchItem(idx) {
-        if (idx === activeIdx) return;
-        // 如果目前不是快速轉傳鎖定狀態，切換前存檔
-        if (!items[activeIdx].isLocked && !isGlobalLocked) {
-            try {
-                items[activeIdx].img = await cp.result({ type: 'base64', size: { width: 1200 }, format: 'jpeg' });
-                items[activeIdx].isLocked = true;
-            } catch(e) { console.warn("Switch Save Fail:", e); }
-        }
-        activeIdx = idx;
-        document.getElementById('v-to').value = items[idx].to;
-        document.getElementById('v-msg').value = items[idx].msg;
-        renderThumbs(); await setupCroppie();
-    }
-
-    function setupMenu() {
-        document.getElementById('menu-replace').onclick = () => { items[menuIdx].isLocked = false; isReplacing = true; document.getElementById('f-in').click(); hideContextMenu(); };
-        document.getElementById('menu-del').onclick = () => { if (items.length > 1) { items.splice(menuIdx, 1); activeIdx = 0; renderThumbs(); setupCroppie(); } hideContextMenu(); };
-        document.addEventListener('click', (e) => { if (!document.getElementById('thumb-menu').contains(e.target)) hideContextMenu(); });
-    }
-
-    function showContextMenu(e, idx) {
-        menuIdx = idx; const m = document.getElementById('thumb-menu');
-        m.style.display = 'block'; m.style.top = `${e.clientY - 60}px`; m.style.left = `${Math.min(e.clientX, window.innerWidth - 160)}px`;
-        e.stopPropagation();
-    }
-    function hideContextMenu() { document.getElementById('thumb-menu').style.display = 'none'; }
-
-    async function handleFile(input) {
-        if (!input.files[0]) return;
-        document.getElementById('loader').style.display = 'flex';
-        const reader = new FileReader();
-        reader.onload = async (e) => {
-            if (isReplacing) { items[menuIdx].img = e.target.result; items[menuIdx].isLocked = false; activeIdx = menuIdx; isReplacing = false; }
-            else { 
-                // 新增照片時，文字內容依照需求預設為空白
-                items.push({ to: '', msg: '', toS: 'xl', msgS: 'md', toC: '#ffffff', msgC: '#ffffff', img: e.target.result, isLocked: false }); 
-                activeIdx = items.length - 1; 
-            }
-            renderThumbs(); await setupCroppie(); document.getElementById('loader').style.display = 'none';
-        };
-        reader.readAsDataURL(input.files[0]);
-    }
-
-    function setCtx(ctx) { currentCtx = ctx; document.getElementById('focus-tag').innerText = ctx==='to'?'編輯姓名':'編輯內容'; updateUI(); }
+    
     function update() {
-        const it = items[activeIdx];
-        it.to = document.getElementById('v-to').value; it.msg = document.getElementById('v-msg').value;
-        if (currentCtx === 'to') { it.toS = document.getElementById('v-size').value; it.toC = document.getElementById('v-color').value; }
-        else { it.msgS = document.getElementById('v-size').value; it.msgC = document.getElementById('v-color').value; }
+        card.to = document.getElementById('v-to').value;
+        card.msg = document.getElementById('v-msg').value;
+        if (currentCtx === 'to') { 
+            card.toS = document.getElementById('v-size').value; 
+            card.toC = document.getElementById('v-color').value; 
+        } else { 
+            card.msgS = document.getElementById('v-size').value; 
+            card.msgC = document.getElementById('v-color').value; 
+        }
         updateUI();
     }
+
     function updateUI() {
-        const it = items[activeIdx], t = document.getElementById('p-to'), m = document.getElementById('p-msg');
-        t.innerText = it.to || " "; t.style.color = it.toC; t.style.fontSize = { md:'18px', lg:'24px', xl:'30px' }[it.toS];
-        m.innerText = it.msg || " "; m.style.color = it.msgC; m.style.fontSize = { md:'14px', lg:'18px', xl:'22px' }[it.msgS];
-        document.getElementById('v-size').value = currentCtx === 'to' ? it.toS : it.msgS;
-        document.getElementById('v-color').value = currentCtx === 'to' ? it.toC : it.msgC;
+        const t = document.getElementById('p-to'), m = document.getElementById('p-msg');
+        t.innerText = card.to || " "; t.style.color = card.toC;
+        t.style.fontSize = { md:'18px', lg:'24px', xl:'30px' }[card.toS];
+        m.innerText = card.msg || " "; m.style.color = card.msgC;
+        m.style.fontSize = { md:'14px', lg:'18px', xl:'22px' }[card.msgS];
+        document.getElementById('v-size').value = currentCtx === 'to' ? card.toS : card.msgS;
+        document.getElementById('v-color').value = currentCtx === 'to' ? card.toC : card.msgC;
+    }
+
+    function handleFile(input) {
+        if (!isLocked && input.files[0]) {
+            document.getElementById('loader').style.display = 'flex';
+            const r = new FileReader();
+            r.onload = e => { 
+                cp.bind({ url: e.target.result }); 
+                document.getElementById('loader').style.display = 'none';
+            };
+            r.readAsDataURL(input.files[0]);
+        }
     }
 
     async function send() {
-        const b = document.getElementById('go'); b.disabled = true; document.getElementById('loader').style.display = 'flex';
+        const b = document.getElementById('go'); b.disabled = true; 
+        document.getElementById('loader').style.display = 'flex';
         try {
-            const finalImgs = [];
-            for (let i=0; i<items.length; i++) {
-                if (isGlobalLocked) { 
-                    finalImgs.push(items[i].img); 
-                } else {
-                    const imgData = (i === activeIdx) ? await cp.result({ type: 'base64', size: { width: 1200 }, format: 'jpeg' }) : items[i].img;
-                    const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`, {
-                        method: 'POST', headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ file: imgData, upload_preset: UPLOAD_PRESET })
-                    });
-                    const d = await res.json(); 
-                    finalImgs.push(d.secure_url);
-                }
+            let finalUrl = card.img;
+            if (!isLocked) {
+                const blob = await cp.result({ type: 'blob', size: { width: 1200 }, format: 'jpeg', quality: 0.9 });
+                const fd = new FormData(); fd.append('file', blob); fd.append('upload_preset', UPLOAD_PRESET);
+                const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`, { method: 'POST', body: fd });
+                const d = await res.json();
+                finalUrl = d.secure_url;
             }
-            const f = items[0], shareUrl = `https://liff.line.me/${LIFF_ID}/?imgs=${encodeURIComponent(JSON.stringify(finalImgs))}&to=${encodeURIComponent(f.to)}&msg=${encodeURIComponent(f.msg)}&toS=${f.toS}&msgS=${f.msgS}&toC=${encodeURIComponent(f.toC)}&msgC=${encodeURIComponent(f.msgC)}`;
-            const bubbles = finalImgs.map((url, i) => ({
-                "type": "bubble", "size": "mega",
-                "body": {
-                    "type": "box", "layout": "vertical", "paddingAll": "0px",
-                    "contents": [
-                        { "type": "image", "url": url, "size": "full", "aspectRatio": "20:13", "aspectMode": "cover" },
-                        { "type": "box", "layout": "horizontal", "position": "absolute", "offsetTop": "0px", "height": "33.3%", "offsetStart": "0px", "offsetEnd": "0px", "contents": [
-                            { "type": "button", "action": { "type": "uri", "label": " ", "uri": `https://liff.line.me/${LIFF_ID}` } },
-                            { "type": "button", "action": { "type": "uri", "label": " ", "uri": shareUrl } }
-                        ]},
-                        { "type": "box", "layout": "vertical", "position": "absolute", "offsetBottom": "0px", "offsetStart": "0px", "offsetEnd": "0px", "paddingAll": "20px", "background": { "type": "linearGradient", "angle": "0deg", "startColor": "#000000cc", "endColor": "#00000000" }, "contents": [
-                            { "type": "text", "text": items[i].to || " ", "weight": "bold", "size": items[i].toS, "color": items[i].toC },
-                            { "type": "text", "text": items[i].msg || " ", "wrap": true, "size": items[i].msgS==='xl'?'lg':items[i].msgS, "color": items[i].msgC, "margin": "sm" }
-                        ]}
-                    ]
+
+            const shareUrl = `https://liff.me/${LIFF_ID}/?img=${encodeURIComponent(finalUrl)}&to=${encodeURIComponent(card.to)}&msg=${encodeURIComponent(card.msg)}&toS=${card.toS}&msgS=${card.msgS}&toC=${encodeURIComponent(card.toC)}&msgC=${encodeURIComponent(card.msgC)}`;
+
+            await liff.shareTargetPicker([{
+                "type": "flex", "altText": "🎁 收到白六賀卡！",
+                "contents": {
+                    "type": "bubble", "size": "mega",
+                    "body": {
+                        "type": "box", "layout": "vertical", "paddingAll": "0px",
+                        "contents": [
+                            { "type": "image", "url": finalUrl, "size": "full", "aspectRatio": "20:13", "aspectMode": "cover" },
+                            {
+                                "type": "box", "layout": "horizontal", "position": "absolute", "offsetTop": "0px", "height": "33.3%", "offsetStart": "0px", "offsetEnd": "0px",
+                                "contents": [
+                                    { "type": "button", "action": { "type": "uri", "label": " ", "uri": `https://liff.line.me/${LIFF_ID}` } },
+                                    { "type": "button", "action": { "type": "uri", "label": " ", "uri": shareUrl } }
+                                ]
+                            },
+                            {
+                                "type": "box", "layout": "vertical", "position": "absolute", "offsetBottom": "0px", "offsetStart": "0px", "offsetEnd": "0px", "paddingAll": "20px",
+                                "background": { "type": "linearGradient", "angle": "0deg", "startColor": "#000000cc", "endColor": "#00000000" },
+                                "contents": [
+                                    { "type": "text", "text": card.to || " ", "weight": "bold", "size": card.toS, "color": card.toC },
+                                    { "type": "text", "text": card.msg || " ", "wrap": true, "size": card.msgS==='xl'?'lg':card.msgS, "color": card.msgC, "margin": "sm" }
+                                ]
+                            }
+                        ]
+                    }
                 }
-            }));
-            await liff.shareTargetPicker([{ "type": "flex", "altText": "🎁 收到白六賀卡！", "contents": { "type": "carousel", "contents": bubbles.slice(0, 10) } }]);
+            }]);
             liff.closeWindow();
-        } catch (e) { alert("傳送失敗：" + e.message); b.disabled = false; document.getElementById('loader').style.display = 'none'; }
+        } catch (e) { b.disabled = false; document.getElementById('loader').style.display = 'none'; alert(e.message); }
     }
     window.onload = init;
 </script>
