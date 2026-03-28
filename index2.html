@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>𓃥 白六賀卡·穩定版</title>
+    <title>𓃥 白六賀卡·穩定修復版</title>
     <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/croppie/2.6.5/croppie.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/croppie/2.6.5/croppie.min.js"></script>
@@ -41,7 +41,7 @@
 
 <div class="container">
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:5px;">
-        <span style="font-weight:900; color:#00b900;">𓃥 白六賀卡 · 穩定修復版</span>
+        <span style="font-weight:900; color:#00b900;">𓃥 白六賀卡 · 轉傳修正版</span>
         <span id="pic-count" style="font-size:12px; color:#aaa;">1 / 1</span>
     </div>
     <div class="thumb-list" id="thumb-container"></div>
@@ -86,9 +86,10 @@
                 isGlobalLocked = true;
                 const imgUrls = JSON.parse(decodeURIComponent(p.get('imgs')));
                 items = imgUrls.map((url, i) => ({
-                    to: i===0 ? (p.get('to')||'') : '', msg: i===0 ? (p.get('msg')||'') : '',
+                    to: i===0 ? (p.get('to')||'') : '', 
+                    msg: i===0 ? (p.get('msg')||'') : '',
                     toS: p.get('toS')||'xl', msgS: p.get('msgS')||'md', toC: p.get('toC')||'#ffffff', msgC: p.get('msgC')||'#ffffff', 
-                    img: url.replace('http://', 'https://'), isLocked: true 
+                    img: url, isLocked: true 
                 }));
                 document.getElementById('btn-up-init').style.display = 'none';
             }
@@ -96,18 +97,23 @@
         } catch (e) { console.error("Init Error:", e); }
     }
 
-    // 修復：如果已經是 datauri 則直接回傳，避免製作新卡時失敗
+    // 核心修正：將網址轉換為具備 CORS 權限的 Base64，解決預覽黑屏
     async function getDataUri(url) {
         if (!url || url.startsWith('data:')) return url;
-        try {
-            const response = await fetch(url + (url.includes('?') ? '&' : '?') + 'v=' + Date.now(), { mode: 'cors' });
-            const blob = await response.blob();
-            return new Promise((resolve) => {
-                const reader = new FileReader();
-                reader.onloadend = () => resolve(reader.result);
-                reader.readAsDataURL(blob);
-            });
-        } catch (e) { return url; }
+        return new Promise((resolve) => {
+            const img = new Image();
+            img.crossOrigin = "Anonymous"; 
+            img.onload = function() {
+                const canvas = document.createElement('canvas');
+                canvas.width = this.width;
+                canvas.height = this.height;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(this, 0, 0);
+                resolve(canvas.toDataURL('image/jpeg'));
+            };
+            img.onerror = () => resolve(url); // 失敗則回傳原址做最後嘗試
+            img.src = url + (url.includes('?') ? '&' : '?') + 'cors=' + Date.now();
+        });
     }
 
     async function setupCroppie() {
@@ -124,10 +130,11 @@
         document.getElementById('loader').style.display = 'flex';
         try {
             const safeData = await getDataUri(it.img);
-            // 綁定後立即執行縮放校正
             await cp.bind({ url: safeData, zoom: 0 });
+            
             if (it.isLocked) {
-                cp.setZoom(0);
+                // 強制多次縮放校正，防止局部放大
+                setTimeout(() => { if(cp) cp.setZoom(0); }, 50);
                 document.querySelector('.cr-viewport').style.border = 'none';
                 document.getElementById('cp-wrap').style.pointerEvents = 'none';
             } else {
@@ -223,7 +230,7 @@
                         method: 'POST', headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ file: imgData, upload_preset: UPLOAD_PRESET })
                     });
-                    const d = await res.json(); finalImgs.push(d.secure_url.replace('http://', 'https://'));
+                    const d = await res.json(); finalImgs.push(d.secure_url);
                 }
             }
             const f = items[0], shareUrl = `https://liff.line.me/${LIFF_ID}/?imgs=${encodeURIComponent(JSON.stringify(finalImgs))}&to=${encodeURIComponent(f.to)}&msg=${encodeURIComponent(f.msg)}&toS=${f.toS}&msgS=${f.msgS}&toC=${encodeURIComponent(f.toC)}&msgC=${encodeURIComponent(f.msgC)}`;
